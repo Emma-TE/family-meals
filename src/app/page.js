@@ -1,13 +1,13 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import Image from "next/image";
 import styles from "./page.module.css";
 import { supabase } from '../lib/supabase'
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import AddMealModal from './components/AddMealModal'
 import EditMealModal from './components/EditMealModal'
-import Link from 'next/link'
 
 export default function Home() {
   const router = useRouter()
@@ -20,64 +20,82 @@ export default function Home() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedMeal, setSelectedMeal] = useState(null)
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 0)
+  const [authChecked, setAuthChecked] = useState(false)
 
   useEffect(() => {
-    // Check if user is logged in
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      if (!session?.user) {
-        router.push('/auth/login')
-      } else {
-        // Fetch user role
-        await fetchUserRole(session.user.id)
+    const handleResize = () => setWindowWidth(window.innerWidth)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  useEffect(() => {
+    checkUser()
+  }, [])
+
+  async function checkUser() {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession()
+      
+      if (error) {
+        console.error('Auth error:', error)
+        setLoading(false)
+        setAuthChecked(true)
+        return
       }
+      
+      if (!session) {
+        router.push('/auth/login')
+        setLoading(false)
+        setAuthChecked(true)
+        return
+      }
+      
+      setUser(session.user)
+      await fetchUserRole(session.user.id)
+      await fetchMeals()
       setLoading(false)
-    })
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser(session?.user ?? null)
-      if (!session?.user) {
-        router.push('/auth/login')
-      } else {
-        await fetchUserRole(session.user.id)
-      }
-    })
-
-    return () => subscription.unsubscribe()
-  }, [router])
-
-  async function fetchUserRole(userId) {
-    const { data, error } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .single()
-    
-    if (error) {
-      console.error('Error fetching user role:', error)
-    } else {
-      setUserRole(data?.role || 'viewer')
+      setAuthChecked(true)
+    } catch (err) {
+      console.error('Check user error:', err)
+      setLoading(false)
+      setAuthChecked(true)
     }
   }
 
-  useEffect(() => {
-    // Fetch meals when user is logged in
-    if (user) {
-      fetchMeals()
+  async function fetchUserRole(userId) {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single()
+      
+      if (error) {
+        console.error('Error fetching user role:', error)
+        setUserRole('viewer')
+      } else {
+        setUserRole(data?.role || 'viewer')
+      }
+    } catch (err) {
+      console.error('Fetch role error:', err)
+      setUserRole('viewer')
     }
-  }, [user])
+  }
 
   async function fetchMeals() {
-    const { data, error } = await supabase
-      .from('meals')
-      .select('*')
-      .order('category')
-    
-    if (error) {
-      console.error('Error fetching meals:', error)
-    } else {
-      setMeals(data)
+    try {
+      const { data, error } = await supabase
+        .from('meals')
+        .select('*')
+        .order('category')
+      
+      if (error) {
+        console.error('Error fetching meals:', error)
+      } else {
+        setMeals(data || [])
+      }
+    } catch (err) {
+      console.error('Fetch meals error:', err)
     }
   }
 
@@ -93,36 +111,56 @@ export default function Home() {
       if (error) {
         alert('Error deleting meal: ' + error.message)
       } else {
-        // Refresh meals list
         fetchMeals()
       }
     }
   }
   
-  useEffect(() => {
-    // Handle window resize for responsive design
-    const handleResize = () => setWindowWidth(window.innerWidth)
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
-
   const handleMealAdded = (newMeal) => {
     setMeals([...meals, newMeal])
   }
 
   const handleMealUpdated = (updatedMeal) => {
-    setMeals(meals.map(meal => meal.id === updatedMeal.id ? updatedMeal : meal))
+    setMeals(meals.map(meal => 
+      meal.id === updatedMeal.id ? updatedMeal : meal
+    ))
   }
 
-  if (loading) {
-    return <div style={{ padding: '50px', textAlign: 'center' }}>Loading...</div>
+  // Show loading state while checking auth
+  if (loading || !authChecked) {
+    return (
+      <div style={{ 
+        height: '100vh', 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center',
+        flexDirection: 'column',
+        gap: '20px'
+      }}>
+        <div style={{ fontSize: '48px' }}>🍽️</div>
+        <div style={{ fontSize: '18px', color: '#666' }}>Loading meal planner...</div>
+        <div style={{ 
+          width: '50px', 
+          height: '50px', 
+          border: '3px solid #f3f3f3',
+          borderTop: '3px solid #0070f3',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite'
+        }} />
+        <style jsx>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    )
   }
 
   if (!user) {
-    return null
+    return null // Will redirect to login
   }
 
-  // Filter meals by category
   const filteredMeals = selectedCategory === 'all' 
     ? meals 
     : meals.filter(meal => meal.category === selectedCategory)
@@ -133,72 +171,77 @@ export default function Home() {
         {/* Header - Mobile Responsive */}
         <div style={{ 
           display: 'flex', 
-          flexDirection: window.innerWidth < 768 ? 'column' : 'row',
+          flexDirection: windowWidth < 768 ? 'column' : 'row',
           justifyContent: 'space-between', 
-          alignItems: window.innerWidth < 768 ? 'flex-start' : 'center',
+          alignItems: windowWidth < 768 ? 'flex-start' : 'center',
           width: '100%',
           padding: '20px',
           borderBottom: '1px solid #eee',
           gap: '10px'
-      }}>
-        <div style={{ 
-          display: 'flex', 
-          flexDirection: window.innerWidth < 768 ? 'column' : 'row',
-          alignItems: window.innerWidth < 768 ? 'flex-start' : 'center',
-          gap: '10px',
-          width: window.innerWidth < 768 ? '100%' : 'auto'
         }}>
-          <h1 style={{ margin: 0, fontSize: window.innerWidth < 768 ? '20px' : '24px' }}>
-            🍽️ Meal Planner
-          </h1>
-          <Link href="/weekly" style={{
-            color: '#0070f3',
-            textDecoration: 'none',
-            fontSize: '16px',
-            whiteSpace: 'nowrap'
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: windowWidth < 768 ? 'column' : 'row',
+            alignItems: windowWidth < 768 ? 'flex-start' : 'center',
+            gap: '10px',
+            width: windowWidth < 768 ? '100%' : 'auto'
           }}>
-            📅 Weekly Plan →
-          </Link>
+            <h1 style={{ margin: 0, fontSize: windowWidth < 768 ? '20px' : '24px' }}>
+              🍽️ Meal Planner
+            </h1>
+            <Link href="/weekly" style={{
+              color: '#0070f3',
+              textDecoration: 'none',
+              fontSize: '16px',
+              whiteSpace: 'nowrap'
+            }}>
+              📅 Weekly Plan →
+            </Link>
+          </div>
+          
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '15px',
+            flexWrap: 'wrap',
+            width: windowWidth < 768 ? '100%' : 'auto',
+            justifyContent: windowWidth < 768 ? 'space-between' : 'flex-end'
+          }}>
+            <span style={{ 
+              fontSize: '14px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              maxWidth: windowWidth < 768 ? '150px' : '200px'
+            }}>
+              {user?.email}
+              {userRole === 'admin' && (
+                <span style={{ 
+                  marginLeft: '8px', 
+                  background: '#0070f3', 
+                  color: 'white',
+                  padding: '2px 8px',
+                  borderRadius: '12px',
+                  fontSize: '10px',
+                  whiteSpace: 'nowrap'
+                }}>
+                  Admin
+                </span>
+              )}
+            </span>
+            <button onClick={() => supabase.auth.signOut()} style={{
+              padding: '5px 10px',
+              fontSize: '14px',
+              whiteSpace: 'nowrap',
+              background: '#dc3545',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}>
+              Sign Out
+            </button>
+          </div>
         </div>
-  
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '15px',
-          flexWrap: 'wrap',
-          width: window.innerWidth < 768 ? '100%' : 'auto',
-          justifyContent: window.innerWidth < 768 ? 'space-between' : 'flex-end'
-        }}>
-          <span style={{ 
-            fontSize: '14px',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            maxWidth: window.innerWidth < 768 ? '150px' : '200px'
-          }}>
-            {user.email}
-            {userRole === 'admin' && (
-              <span style={{ 
-                marginLeft: '8px', 
-                background: '#0070f3', 
-                color: 'white',
-                padding: '2px 8px',
-                borderRadius: '12px',
-                fontSize: '10px',
-                whiteSpace: 'nowrap'
-              }}>
-                Admin
-              </span>
-            )}
-          </span>
-          <button onClick={() => supabase.auth.signOut()} style={{
-            padding: '5px 10px',
-            fontSize: '14px',
-            whiteSpace: 'nowrap'
-          }}>
-            Sign Out
-          </button>
-        </div>
-      </div>
 
         <div style={{ padding: '20px' }}>
           <div style={{ 
@@ -209,19 +252,19 @@ export default function Home() {
           }}>
             <h2>Our Meal Library ({meals.length} meals)</h2>
             
-            {/* Admin Only - Add Meal Button */}
             {userRole === 'admin' && (
               <button 
-              onClick={() => setIsAddModalOpen(true)}
-              style={{
-                background: '#28a745',
-                color: 'white',
-                border: 'none',
-                padding: '10px 20px',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                fontWeight: 'bold'
-              }}>
+                onClick={() => setIsAddModalOpen(true)}
+                style={{
+                  background: '#28a745',
+                  color: 'white',
+                  border: 'none',
+                  padding: '10px 20px',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold'
+                }}
+              >
                 + Add New Meal
               </button>
             )}
@@ -287,86 +330,99 @@ export default function Home() {
           </div>
 
           {/* Meal Grid */}
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-            gap: '20px'
-          }}>
-            {filteredMeals.map(meal => (
-              <div key={meal.id} style={{
-                border: '1px solid #ddd',
-                borderRadius: '8px',
-                overflow: 'hidden',
-                background: 'white',
-                position: 'relative'
-              }}>
-                {/* Admin Controls - Only visible to admin */}
-                {userRole === 'admin' && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '10px',
-                    right: '10px',
-                    display: 'flex',
-                    gap: '5px'
-                  }}>
-                    <button
-                      onClick={() => {
-                        setSelectedMeal(meal)
-                        setIsEditModalOpen(true)
-                      }}
-                      style={{
-                        background: '#0070f3',
-                        color: 'white',
-                        border: 'none',
-                        padding: '5px 10px',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        fontSize: '12px'
-                      }}
-                    >
-                      Edit
-                    </button>
-                    <button 
-                      onClick={() => handleDeleteMeal(meal.id)}
-                      style={{
-                        background: '#dc3545',
-                        color: 'white',
-                        border: 'none',
-                        padding: '5px 10px',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        fontSize: '12px'
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                )}
-                
-                <img 
-                  src={meal.image_url || 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=400'} 
-                  alt={meal.name}
-                  style={{ width: '100%', height: '180px', objectFit: 'cover' }}
-                />
-                <div style={{ padding: '15px' }}>
-                  <h3>{meal.name}</h3>
-                  <p><strong>Category:</strong> {meal.category}</p>
-                  <p><strong>Calories:</strong> ~{meal.calories} kcal</p>
-                  <p><strong>Portion:</strong> {meal.portion}</p>
-                  <p><strong>Prep time:</strong> {meal.prep_time}</p>
+          {meals.length === 0 ? (
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '50px',
+              background: '#f9f9f9',
+              borderRadius: '8px'
+            }}>
+              <p style={{ fontSize: '18px', marginBottom: '20px' }}>
+                No meals yet. Click "Add New Meal" to get started!
+              </p>
+            </div>
+          ) : (
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+              gap: '20px'
+            }}>
+              {filteredMeals.map(meal => (
+                <div key={meal.id} style={{
+                  border: '1px solid #ddd',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  background: 'white',
+                  position: 'relative'
+                }}>
+                  {userRole === 'admin' && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '10px',
+                      right: '10px',
+                      display: 'flex',
+                      gap: '5px',
+                      zIndex: 1
+                    }}>
+                      <button 
+                        onClick={() => {
+                          setSelectedMeal(meal)
+                          setIsEditModalOpen(true)
+                        }}
+                        style={{
+                          background: '#0070f3',
+                          color: 'white',
+                          border: 'none',
+                          padding: '5px 10px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '12px'
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteMeal(meal.id)}
+                        style={{
+                          background: '#dc3545',
+                          color: 'white',
+                          border: 'none',
+                          padding: '5px 10px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '12px'
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
                   
-                  <details>
-                    <summary style={{ cursor: 'pointer', color: '#0070f3' }}>View Ingredients</summary>
-                    <ul style={{ marginTop: '10px', paddingLeft: '20px' }}>
-                      {meal.ingredients.map((item, index) => (
-                        <li key={index}>{item.name} — {item.quantity}</li>
-                      ))}
-                    </ul>
-                  </details>
+                  <img 
+                    src={meal.image_url || 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=400'} 
+                    alt={meal.name}
+                    style={{ width: '100%', height: '180px', objectFit: 'cover' }}
+                  />
+                  <div style={{ padding: '15px' }}>
+                    <h3>{meal.name}</h3>
+                    <p><strong>Category:</strong> {meal.category}</p>
+                    <p><strong>Calories:</strong> ~{meal.calories} kcal</p>
+                    <p><strong>Portion:</strong> {meal.portion}</p>
+                    <p><strong>Prep time:</strong> {meal.prep_time}</p>
+                    
+                    <details>
+                      <summary style={{ cursor: 'pointer', color: '#0070f3' }}>View Ingredients</summary>
+                      <ul style={{ marginTop: '10px', paddingLeft: '20px' }}>
+                        {meal.ingredients?.map((item, index) => (
+                          <li key={index}>{item.name} — {item.quantity}</li>
+                        ))}
+                      </ul>
+                    </details>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <AddMealModal 
@@ -375,14 +431,16 @@ export default function Home() {
           onMealAdded={handleMealAdded}
         />
 
-        <EditMealModal
+        <EditMealModal 
           isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
+          onClose={() => {
+            setIsEditModalOpen(false)
+            setSelectedMeal(null)
+          }}
           meal={selectedMeal}
           onMealUpdated={handleMealUpdated}
         />
-
       </main>
     </div>
-  );
+  )
 }

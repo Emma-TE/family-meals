@@ -8,27 +8,30 @@ import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
   const router = useRouter()
-  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        router.push('/') // Redirect to home if logged in
+      if (session) {
+        router.push('/')
       }
+      setLoading(false)
     })
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
+      if (session) {
         router.push('/')
       }
     })
 
     return () => subscription.unsubscribe()
   }, [router])
+
+  if (loading) {
+    return <div style={{ padding: '50px', textAlign: 'center' }}>Loading...</div>
+  }
 
   return (
     <div style={{
@@ -45,7 +48,7 @@ export default function LoginPage() {
         appearance={{ theme: ThemeSupa }}
         theme="light"
         providers={[]}
-        redirectTo="http://localhost:3000"
+        redirectTo={typeof window !== 'undefined' ? window.location.origin : ''}
       />
     </div>
   )
