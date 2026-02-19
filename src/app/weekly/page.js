@@ -216,7 +216,10 @@ export default function WeeklyPage() {
           flexWrap: 'wrap'
         }}>
           <span style={{ fontSize: '14px' }}>{user?.email}</span>
-          <button onClick={() => supabase.auth.signOut()}>
+          <button onClick={async() => {
+            await supabase.auth.signOut()
+            router.push('/auth/login')
+          }}>
             Sign Out
           </button>
         </div>

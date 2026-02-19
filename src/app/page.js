@@ -228,16 +228,22 @@ export default function Home() {
                 </span>
               )}
             </span>
-            <button onClick={() => supabase.auth.signOut()} style={{
-              padding: '5px 10px',
-              fontSize: '14px',
-              whiteSpace: 'nowrap',
-              background: '#dc3545',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}>
+            <button 
+              onClick={async () => {
+                await supabase.auth.signOut()
+                router.push('/auth/login')
+              }}  
+              style={{
+                padding: '5px 10px',
+                fontSize: '14px',
+                whiteSpace: 'nowrap',
+                background: '#dc3545',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
               Sign Out
             </button>
           </div>
