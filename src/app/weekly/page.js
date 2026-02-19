@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { theme, globalStyles } from '../styles/globalStyles'
 
 export default function WeeklyPage() {
   const router = useRouter()
@@ -17,6 +18,8 @@ export default function WeeklyPage() {
   const [selectedMeal, setSelectedMeal] = useState(null)
   const [isMealModalOpen, setIsMealModalOpen] = useState(false)
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 0)
+  const [hoveredDay, setHoveredDay] = useState(null)
+  const [hoveredMeal, setHoveredMeal] = useState(null)
 
   const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
   const mealTimes = ['breakfast', 'lunch', 'dinner']
@@ -62,7 +65,6 @@ export default function WeeklyPage() {
   }
 
   async function fetchWeeklyPlan() {
-    // Get the start of current week (Monday)
     const today = new Date()
     const monday = new Date(today)
     monday.setDate(today.getDate() - (today.getDay() || 7) + 1)
@@ -84,7 +86,6 @@ export default function WeeklyPage() {
     setGenerating(true)
 
     try {
-      // Check if plan already exists for this week
       const { data: existingPlan, error: checkError } = await supabase
         .from('weekly_plans')
         .select('id')
@@ -105,7 +106,6 @@ export default function WeeklyPage() {
           return
         }
         
-        // Delete existing plan
         const { error: deleteError } = await supabase
           .from('weekly_plans')
           .delete()
@@ -119,26 +119,22 @@ export default function WeeklyPage() {
         }
       }
     
-      // Group meals by category
       const breakfastMeals = meals.filter(m => m.category === 'breakfast')
       const lunchMeals = meals.filter(m => m.category === 'lunch')
       const dinnerMeals = meals.filter(m => m.category === 'dinner')
     
-      // Check if we have enough meals
       if (breakfastMeals.length === 0 || lunchMeals.length === 0 || dinnerMeals.length === 0) {
         alert('Please add at least one breakfast, lunch, and dinner meal first.')
         setGenerating(false)
         return
       }
     
-      // Shuffle arrays to get random meals
       const shuffle = (array) => array.sort(() => Math.random() - 0.5)
       
       const shuffledBreakfast = shuffle([...breakfastMeals])
       const shuffledLunch = shuffle([...lunchMeals])
       const shuffledDinner = shuffle([...dinnerMeals])
     
-      // Create weekly plan object
       const weekStart = currentWeek
       const newPlan = { week_start: weekStart }
     
@@ -148,9 +144,6 @@ export default function WeeklyPage() {
         newPlan[`${day}_dinner`] = shuffledDinner[index % shuffledDinner.length]?.id
       })
     
-      console.log('Attempting to insert plan:', newPlan)
-
-      // Save to database
       const { data, error } = await supabase
         .from('weekly_plans')
         .insert([newPlan])
@@ -158,9 +151,8 @@ export default function WeeklyPage() {
     
       if (error) {
         console.error('Insert error details:', error)
-        alert('Error generating week: ' + error.message + '\n\nCheck console for details')
+        alert('Error generating week: ' + error.message)
       } else {
-        console.log('Insert successful:', data)
         alert('✅ New week generated!')
         fetchWeeklyPlan()
       }
@@ -179,427 +171,857 @@ export default function WeeklyPage() {
 
   const getMealById = (id) => meals.find(m => m.id === id)
 
+  const getDayIcon = (day) => {
+    const icons = {
+      monday: '🌙',
+      tuesday: '🔥',
+      wednesday: '💧',
+      thursday: '🌳',
+      friday: '⭐',
+      saturday: '🎉',
+      sunday: '☀️'
+    }
+    return icons[day] || '📅'
+  }
+
+  const formatDayName = (day) => {
+    return day.charAt(0).toUpperCase() + day.slice(1)
+  }
+
   if (loading) {
-    return <div style={{ padding: '50px', textAlign: 'center' }}>Loading...</div>
+    return (
+      <div style={{ 
+        minHeight: '100vh',
+        background: theme.colors.primaryGradient,
+        display: 'flex',
+        justifyContent: 'center', 
+        alignItems: 'center',
+        flexDirection: 'column',
+        gap: theme.spacing.xl
+      }}>
+        <div style={{ 
+          fontSize: '64px',
+          animation: theme.animations.bounce
+        }}>📅</div>
+        <div style={{ 
+          fontSize: theme.typography.fontSizes.xl,
+          color: 'white',
+          fontWeight: theme.typography.fontWeights.medium
+        }}>Loading weekly plan...</div>
+        <div style={{ 
+          width: '50px', 
+          height: '50px', 
+          border: '3px solid rgba(255,255,255,0.3)',
+          borderTop: `3px solid white`,
+          borderRadius: theme.borderRadius.full,
+          animation: 'spin 1s linear infinite'
+        }} />
+        <style>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+          ${globalStyles}
+        `}</style>
+      </div>
+    )
   }
 
   return (
-    <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ 
-        display: 'flex', 
-        flexDirection: windowWidth < 768 ? 'column' : 'row',
-        justifyContent: 'space-between', 
-        alignItems: windowWidth < 768 ? 'flex-start' : 'center',
-        marginBottom: '30px',
-        paddingBottom: '20px',
-        borderBottom: '1px solid #eee',
-        gap: '10px'
+    <>
+      <style>{globalStyles}</style>
+      <div style={{
+        minHeight: '100vh',
+        background: theme.colors.background,
+        animation: theme.animations.fadeIn
       }}>
-        <div style={{ 
-          display: 'flex', 
-          flexDirection: windowWidth < 768 ? 'column' : 'row',
-          alignItems: windowWidth < 768 ? 'flex-start' : 'center',
-          gap: '10px'
-        }}>
-          <h1 style={{ margin: 0, fontSize: windowWidth < 768 ? '20px' : '24px' }}>
-            📅 Weekly Meal Plan
-          </h1>
-          <Link href="/" style={{ color: '#0070f3', textDecoration: 'none' }}>
-            ← Back to Meals
-          </Link>
-        </div>
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '15px',
-          flexWrap: 'wrap'
-        }}>
-          <span style={{ fontSize: '14px' }}>{user?.email}</span>
-          <button onClick={async() => {
-            await supabase.auth.signOut()
-            router.push('/auth/login')
-          }}>
-            Sign Out
-          </button>
-        </div>
-      </div>
-
-      {/* Week Controls */}
-      <div style={{ 
-        display: 'flex', 
-        flexDirection: windowWidth < 768 ? 'column' : 'row',
-        justifyContent: 'space-between', 
-        alignItems: windowWidth < 768 ? 'flex-start' : 'center',
-        marginBottom: '30px',
-        gap: '15px'
-      }}>
-        <div>
-          <h2 style={{ fontSize: windowWidth < 768 ? '18px' : '22px' }}>
-            Week of {new Date(currentWeek).toLocaleDateString('en-US', { 
-              month: 'long', 
-              day: 'numeric',
-              year: 'numeric'
-            })}
-          </h2>
-        </div>
-        {userRole === 'admin' && (
-          <button
-            onClick={generateNewWeek}
-            disabled={generating}
-            style={{
-              background: generating ? '#ccc' : '#28a745',
-              color: 'white',
-              border: 'none',
-              padding: '10px 20px',
-              borderRadius: '5px',
-              cursor: generating ? 'not-allowed' : 'pointer',
-              fontWeight: 'bold',
-              width: windowWidth < 768 ? '100%' : 'auto'
-            }}
-          >
-            {generating ? 'Generating...' : '🔄 Generate New Week'}
-          </button>
-        )}
-      </div>
-
-      {/* Weekly Grid - Mobile Responsive with Horizontal Scroll */}
-      {!weeklyPlan ? (
-        <div style={{ 
-          textAlign: 'center', 
-          padding: '50px',
-          background: '#f9f9f9',
-          borderRadius: '8px'
-        }}>
-          <p style={{ marginBottom: '20px' }}>No meal plan for this week yet.</p>
-          {userRole === 'admin' && (
-            <button
-              onClick={generateNewWeek}
-              disabled={generating}
-              style={{
-                background: generating ? '#ccc' : '#0070f3',
-                color: 'white',
-                border: 'none',
-                padding: '15px 30px',
-                borderRadius: '5px',
-                cursor: generating ? 'not-allowed' : 'pointer',
-                fontSize: '16px',
-                width: windowWidth < 768 ? '100%' : 'auto'
-              }}
-            >
-              {generating ? 'Generating...' : '✨ Generate First Week'}
-            </button>
-          )}
-        </div>
-      ) : (
-        <>
-          {/* Mobile Swipe Indicator */}
-          {windowWidth < 768 && (
-            <div style={{ 
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '10px',
-              padding: '0 5px'
-            }}>
-              <span style={{ fontSize: '14px', color: '#666' }}>
-                ← Swipe to see more days
-              </span>
-              <span style={{ fontSize: '14px', color: '#666' }}>
-                {days.length} days →
-              </span>
-            </div>
-          )}
-
-          {/* Horizontal Scroll Container */}
-          <div style={{ 
-            display: 'flex',
-            overflowX: 'auto',
-            gap: '15px',
-            padding: '5px 0 20px 0',
-            scrollSnapType: windowWidth < 768 ? 'x mandatory' : 'none',
-            WebkitOverflowScrolling: 'touch'
-          }}>
-            {days.map(day => (
-              <div key={day} style={{ 
-                minWidth: windowWidth < 768 ? '85%' : 'calc(14.28% - 13px)',
-                scrollSnapAlign: windowWidth < 768 ? 'start' : 'none',
-                background: 'white',
-                border: '1px solid #ddd',
-                borderRadius: '12px',
-                padding: '15px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-              }}>
-                {/* Day Header */}
-                <div style={{ 
-                  textAlign: 'center',
-                  fontWeight: 'bold',
-                  fontSize: windowWidth < 768 ? '18px' : '16px',
-                  textTransform: 'capitalize',
-                  padding: '10px',
-                  background: '#f0f0f0',
-                  borderRadius: '8px',
-                  marginBottom: '15px'
-                }}>
-                  {day}
-                </div>
-
-                {/* Meals for this day */}
-                {mealTimes.map(time => {
-                  const mealId = weeklyPlan[`${day}_${time}`]
-                  const meal = getMealById(mealId)
-                  return (
-                    <div 
-                      key={time} 
-                      onClick={() => meal && handleMealClick(meal)}
-                      style={{ 
-                        marginBottom: '15px',
-                        padding: '12px',
-                        background: time === 'breakfast' ? '#fff4e6' :
-                                   time === 'lunch' ? '#e6f3ff' : '#f0e6ff',
-                        borderRadius: '8px',
-                        cursor: meal ? 'pointer' : 'default',
-                        transition: 'transform 0.2s',
-                        border: meal ? '1px solid transparent' : '1px dashed #ccc',
-                        opacity: meal ? 1 : 0.7
-                      }}
-                      onMouseEnter={(e) => {
-                        if (meal) e.currentTarget.style.transform = 'scale(1.02)'
-                      }}
-                      onMouseLeave={(e) => {
-                        if (meal) e.currentTarget.style.transform = 'scale(1)'
-                      }}
-                    >
-                      <div style={{ 
-                        fontSize: '13px', 
-                        fontWeight: 'bold',
-                        textTransform: 'capitalize',
-                        marginBottom: '8px',
-                        color: '#666'
-                      }}>
-                        {time}
-                      </div>
-                      {meal ? (
-                        <>
-                          {/* Small meal image */}
-                          <img 
-                            src={meal.image_url || 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=400'} 
-                            alt={meal.name}
-                            style={{ 
-                              width: '100%', 
-                              height: windowWidth < 768 ? '100px' : '70px', 
-                              objectFit: 'cover',
-                              borderRadius: '6px',
-                              marginBottom: '8px'
-                            }}
-                          />
-                          <div style={{ 
-                            fontWeight: 'bold', 
-                            fontSize: windowWidth < 768 ? '15px' : '13px' 
-                          }}>
-                            {meal.name.length > (windowWidth < 768 ? 40 : 25) 
-                              ? meal.name.substring(0, windowWidth < 768 ? 37 : 22) + '...' 
-                              : meal.name}
-                          </div>
-                          <div style={{ 
-                            fontSize: windowWidth < 768 ? '13px' : '11px', 
-                            color: '#666', 
-                            marginTop: '4px' 
-                          }}>
-                            🔥 {meal.calories} kcal
-                          </div>
-                          <div style={{ 
-                            fontSize: windowWidth < 768 ? '12px' : '10px', 
-                            color: '#999', 
-                            marginTop: '4px' 
-                          }}>
-                            {meal.portion.length > (windowWidth < 768 ? 50 : 30) 
-                              ? meal.portion.substring(0, windowWidth < 768 ? 47 : 27) + '...' 
-                              : meal.portion}
-                          </div>
-                          <div style={{ 
-                            fontSize: '11px', 
-                            color: '#0070f3', 
-                            marginTop: '8px',
-                            textAlign: 'right'
-                          }}>
-                            Tap to view details →
-                          </div>
-                        </>
-                      ) : (
-                        <div style={{ 
-                          fontSize: '13px', 
-                          color: '#999', 
-                          textAlign: 'center', 
-                          padding: '20px 10px'
-                        }}>
-                          No meal assigned
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* Meal Detail Modal */}
-      {isMealModalOpen && selectedMeal && (
+        {/* Header */}
         <div style={{
-          position: 'fixed',
+          background: 'white',
+          borderBottom: `1px solid ${theme.colors.border}`,
+          boxShadow: theme.shadows.sm,
+          position: 'sticky',
           top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.7)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 2000,
-          padding: '20px'
-        }} onClick={() => setIsMealModalOpen(false)}>
+          zIndex: 100,
+          backdropFilter: 'blur(10px)',
+          background: 'rgba(255,255,255,0.9)'
+        }}>
           <div style={{
-            backgroundColor: 'white',
-            borderRadius: '16px',
-            maxWidth: '500px',
-            width: '100%',
-            maxHeight: '90vh',
-            overflowY: 'auto',
-            position: 'relative'
-          }} onClick={(e) => e.stopPropagation()}>
-            
-            {/* Close button */}
-            <button
-              onClick={() => setIsMealModalOpen(false)}
-              style={{
-                position: 'absolute',
-                top: '10px',
-                right: '10px',
-                background: 'white',
-                border: 'none',
-                fontSize: '24px',
-                cursor: 'pointer',
-                width: '40px',
-                height: '40px',
-                borderRadius: '20px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                zIndex: 1
-              }}
-            >
-              ✕
-            </button>
-
-            {/* Meal Image */}
-            <img 
-              src={selectedMeal.image_url || 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=400'} 
-              alt={selectedMeal.name}
-              style={{ 
-                width: '100%', 
-                height: windowWidth < 768 ? '200px' : '250px', 
-                objectFit: 'cover',
-                borderTopLeftRadius: '16px',
-                borderTopRightRadius: '16px'
-              }}
-            />
-
-            {/* Meal Details */}
-            <div style={{ padding: '24px' }}>
-              <h2 style={{ margin: '0 0 8px 0', fontSize: windowWidth < 768 ? '22px' : '24px' }}>
-                {selectedMeal.name}
-              </h2>
+            maxWidth: '1200px',
+            margin: '0 auto',
+            padding: theme.spacing.md,
+            display: 'flex',
+            flexDirection: windowWidth < 768 ? 'column' : 'row',
+            justifyContent: 'space-between',
+            alignItems: windowWidth < 768 ? 'stretch' : 'center',
+            gap: theme.spacing.md
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: theme.spacing.lg,
+              flexWrap: 'wrap'
+            }}>
+              <Link href="/" style={{ textDecoration: 'none' }}>
+                <h1 style={{
+                  margin: 0,
+                  fontSize: windowWidth < 768 ? theme.typography.fontSizes.xl : theme.typography.fontSizes.xxl,
+                  background: theme.colors.primaryGradient,
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  fontWeight: theme.typography.fontWeights.bold,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: theme.spacing.xs
+                }}>
+                  <span>📅</span> Weekly Plan
+                </h1>
+              </Link>
               
-              <div style={{ 
-                display: 'flex', 
-                gap: '10px', 
-                marginBottom: '20px',
-                flexWrap: 'wrap'
+              <Link href="/" style={{
+                color: theme.colors.primary,
+                textDecoration: 'none',
+                fontSize: theme.typography.fontSizes.lg,
+                fontWeight: theme.typography.fontWeights.medium,
+                padding: `${theme.spacing.xs} ${theme.spacing.md}`,
+                borderRadius: theme.borderRadius.full,
+                background: 'rgba(102, 126, 234, 0.1)',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                gap: theme.spacing.xs
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(102, 126, 234, 0.2)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(102, 126, 234, 0.1)'}
+              >
+                <span>🍽️</span> Meal Library →
+              </Link>
+            </div>
+
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: theme.spacing.lg,
+              flexWrap: 'wrap'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: theme.spacing.sm,
+                background: '#f7fafc',
+                padding: `${theme.spacing.xs} ${theme.spacing.md}`,
+                borderRadius: theme.borderRadius.full,
+                border: `1px solid ${theme.colors.border}`
               }}>
+                <span style={{ fontSize: theme.typography.fontSizes.lg }}>👤</span>
                 <span style={{
-                  background: '#e6f3ff',
-                  padding: '4px 12px',
-                  borderRadius: '20px',
-                  fontSize: '14px',
-                  fontWeight: 'bold'
+                  fontSize: theme.typography.fontSizes.sm,
+                  color: theme.colors.text.secondary,
+                  maxWidth: windowWidth < 768 ? '120px' : '200px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
                 }}>
-                  {selectedMeal.category}
+                  {user?.email}
                 </span>
-                <span style={{
-                  background: '#fff4e6',
-                  padding: '4px 12px',
-                  borderRadius: '20px',
-                  fontSize: '14px',
-                  fontWeight: 'bold'
-                }}>
-                  🔥 {selectedMeal.calories} kcal
-                </span>
-                {selectedMeal.prep_time && (
+                {userRole === 'admin' && (
                   <span style={{
-                    background: '#f0f0f0',
-                    padding: '4px 12px',
-                    borderRadius: '20px',
-                    fontSize: '14px'
+                    background: theme.colors.primaryGradient,
+                    color: 'white',
+                    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+                    borderRadius: theme.borderRadius.full,
+                    fontSize: theme.typography.fontSizes.xs,
+                    fontWeight: theme.typography.fontWeights.semibold,
+                    marginLeft: theme.spacing.xs
                   }}>
-                    ⏱️ {selectedMeal.prep_time}
+                    Admin
                   </span>
                 )}
               </div>
-
-              {/* Portion */}
-              <div style={{ marginBottom: '20px' }}>
-                <h3 style={{ fontSize: '16px', margin: '0 0 8px 0', color: '#666' }}>
-                  🍽️ Portion Advice
-                </h3>
-                <p style={{ margin: 0, fontSize: '16px' }}>{selectedMeal.portion}</p>
-              </div>
-
-              {/* Ingredients */}
-              <div>
-                <h3 style={{ fontSize: '16px', margin: '0 0 12px 0', color: '#666' }}>
-                  🧺 Ingredients
-                </h3>
-                <div style={{ 
-                  background: '#f9f9f9',
-                  borderRadius: '8px',
-                  padding: '16px'
-                }}>
-                  {selectedMeal.ingredients?.map((item, index) => (
-                    <div key={index} style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between',
-                      padding: '8px 0',
-                      borderBottom: index < selectedMeal.ingredients.length - 1 ? '1px solid #eee' : 'none'
-                    }}>
-                      <span style={{ fontWeight: '500' }}>{item.name}</span>
-                      <span style={{ color: '#666' }}>{item.quantity}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Close button at bottom for mobile */}
-              <button
-                onClick={() => setIsMealModalOpen(false)}
+              
+              <button 
+                onClick={async () => {
+                  await supabase.auth.signOut()
+                  router.push('/auth/login')
+                }} 
                 style={{
-                  width: '100%',
-                  padding: '14px',
-                  marginTop: '20px',
-                  background: '#0070f3',
+                  padding: `${theme.spacing.sm} ${theme.spacing.lg}`,
+                  fontSize: theme.typography.fontSizes.sm,
+                  background: theme.colors.danger,
                   color: 'white',
                   border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer'
+                  borderRadius: theme.borderRadius.full,
+                  cursor: 'pointer',
+                  fontWeight: theme.typography.fontWeights.medium,
+                  boxShadow: theme.shadows.sm,
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: theme.spacing.xs
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = theme.colors.dangerDark
+                  e.currentTarget.style.transform = 'translateY(-2px)'
+                  e.currentTarget.style.boxShadow = theme.shadows.md
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = theme.colors.danger
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.boxShadow = theme.shadows.sm
                 }}
               >
-                Close
+                <span>🚪</span> Sign Out
               </button>
             </div>
           </div>
         </div>
-      )}
-    </div>
+
+        {/* Main Content */}
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: theme.spacing.xl }}>
+          {/* Week Header */}
+          <div style={{
+            display: 'flex',
+            flexDirection: windowWidth < 768 ? 'column' : 'row',
+            justifyContent: 'space-between',
+            alignItems: windowWidth < 768 ? 'flex-start' : 'center',
+            marginBottom: theme.spacing.xl,
+            gap: theme.spacing.md
+          }}>
+            <div style={{
+              background: 'white',
+              padding: theme.spacing.lg,
+              borderRadius: theme.borderRadius.lg,
+              boxShadow: theme.shadows.md,
+              border: `1px solid ${theme.colors.border}`,
+              flex: 1
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.md }}>
+                <div style={{
+                  background: theme.colors.primaryGradient,
+                  width: '50px',
+                  height: '50px',
+                  borderRadius: theme.borderRadius.full,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontSize: '24px'
+                }}>
+                  📅
+                </div>
+                <div>
+                  <div style={{
+                    fontSize: theme.typography.fontSizes.sm,
+                    color: theme.colors.text.muted,
+                    marginBottom: theme.spacing.xs
+                  }}>
+                    Current Week
+                  </div>
+                  <h2 style={{
+                    margin: 0,
+                    fontSize: windowWidth < 768 ? theme.typography.fontSizes.lg : theme.typography.fontSizes.xl,
+                    color: theme.colors.text.primary,
+                    fontWeight: theme.typography.fontWeights.semibold
+                  }}>
+                    {new Date(currentWeek).toLocaleDateString('en-US', { 
+                      month: 'long', 
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
+                  </h2>
+                </div>
+              </div>
+            </div>
+
+            {userRole === 'admin' && (
+              <button
+                onClick={generateNewWeek}
+                disabled={generating}
+                style={{
+                  background: generating ? '#ccc' : theme.colors.primaryGradient,
+                  color: 'white',
+                  border: 'none',
+                  padding: `${theme.spacing.md} ${theme.spacing.xl}`,
+                  borderRadius: theme.borderRadius.full,
+                  cursor: generating ? 'not-allowed' : 'pointer',
+                  fontWeight: theme.typography.fontWeights.semibold,
+                  fontSize: theme.typography.fontSizes.base,
+                  boxShadow: theme.shadows.md,
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: theme.spacing.sm,
+                  width: windowWidth < 768 ? '100%' : 'auto',
+                  justifyContent: 'center'
+                }}
+                onMouseEnter={(e) => {
+                  if (!generating) {
+                    e.currentTarget.style.transform = 'translateY(-2px)'
+                    e.currentTarget.style.boxShadow = theme.shadows.hover
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!generating) {
+                    e.currentTarget.style.transform = 'translateY(0)'
+                    e.currentTarget.style.boxShadow = theme.shadows.md
+                  }
+                }}
+              >
+                <span>{generating ? '⏳' : '🔄'}</span>
+                {generating ? 'Generating...' : 'Generate New Week'}
+              </button>
+            )}
+          </div>
+
+          {/* Weekly Grid */}
+          {!weeklyPlan ? (
+            <div style={{
+              textAlign: 'center',
+              padding: theme.spacing.xxl,
+              background: 'white',
+              borderRadius: theme.borderRadius.lg,
+              border: `2px dashed ${theme.colors.border}`,
+              animation: theme.animations.fadeIn
+            }}>
+              <div style={{ fontSize: '64px', marginBottom: theme.spacing.lg }}>📅</div>
+              <h3 style={{ color: theme.colors.text.primary, marginBottom: theme.spacing.sm }}>
+                No meal plan for this week
+              </h3>
+              <p style={{ color: theme.colors.text.muted, marginBottom: theme.spacing.lg }}>
+                {userRole === 'admin' 
+                  ? 'Click "Generate New Week" to create your first weekly meal plan!'
+                  : 'Your admin hasn\'t generated a meal plan for this week yet.'}
+              </p>
+              {userRole === 'admin' && (
+                <button
+                  onClick={generateNewWeek}
+                  disabled={generating}
+                  style={{
+                    background: generating ? '#ccc' : theme.colors.primaryGradient,
+                    color: 'white',
+                    border: 'none',
+                    padding: `${theme.spacing.md} ${theme.spacing.xl}`,
+                    borderRadius: theme.borderRadius.full,
+                    cursor: generating ? 'not-allowed' : 'pointer',
+                    fontWeight: theme.typography.fontWeights.semibold,
+                    fontSize: theme.typography.fontSizes.base
+                  }}
+                >
+                  {generating ? 'Generating...' : '✨ Generate First Week'}
+                </button>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* Mobile Swipe Indicator */}
+              {windowWidth < 768 && (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: theme.spacing.md,
+                  padding: `0 ${theme.spacing.xs}`,
+                  color: theme.colors.text.muted,
+                  fontSize: theme.typography.fontSizes.sm
+                }}>
+                  <span>← Swipe to see more days</span>
+                  <span>7 days →</span>
+                </div>
+              )}
+
+              {/* Horizontal Scroll Container */}
+              <div style={{
+                display: 'flex',
+                overflowX: 'auto',
+                gap: theme.spacing.lg,
+                padding: `${theme.spacing.xs} 0 ${theme.spacing.xl} 0`,
+                scrollSnapType: windowWidth < 768 ? 'x mandatory' : 'none',
+                WebkitOverflowScrolling: 'touch',
+                scrollbarWidth: 'thin',
+                scrollbarColor: `${theme.colors.primary} ${theme.colors.border}`
+              }}>
+                {days.map((day, dayIndex) => {
+                  const isHovered = hoveredDay === day
+                  return (
+                    <div
+                      key={day}
+                      onMouseEnter={() => setHoveredDay(day)}
+                      onMouseLeave={() => setHoveredDay(null)}
+                      style={{
+                        minWidth: windowWidth < 768 ? '85%' : 'calc(14.28% - 13px)',
+                        scrollSnapAlign: windowWidth < 768 ? 'start' : 'none',
+                        background: 'white',
+                        border: `1px solid ${theme.colors.border}`,
+                        borderRadius: theme.borderRadius.lg,
+                        overflow: 'hidden',
+                        boxShadow: isHovered ? theme.shadows.hover : theme.shadows.md,
+                        transition: 'all 0.3s ease',
+                        transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
+                        animation: `slideUp 0.4s ease-out ${dayIndex * 0.05}s both`
+                      }}
+                    >
+                      {/* Day Header */}
+                      <div style={{
+                        background: theme.colors.primaryGradient,
+                        padding: theme.spacing.md,
+                        textAlign: 'center',
+                        color: 'white'
+                      }}>
+                        <div style={{ fontSize: '24px', marginBottom: theme.spacing.xs }}>
+                          {getDayIcon(day)}
+                        </div>
+                        <div style={{
+                          fontWeight: theme.typography.fontWeights.bold,
+                          fontSize: theme.typography.fontSizes.lg,
+                          textTransform: 'capitalize'
+                        }}>
+                          {formatDayName(day)}
+                        </div>
+                      </div>
+
+                      {/* Meals */}
+                      <div style={{ padding: theme.spacing.md }}>
+                        {mealTimes.map(time => {
+                          const mealId = weeklyPlan[`${day}_${time}`]
+                          const meal = getMealById(mealId)
+                          const isMealHovered = hoveredMeal === `${day}-${time}`
+
+                          return (
+                            <div
+                              key={time}
+                              onMouseEnter={() => setHoveredMeal(`${day}-${time}`)}
+                              onMouseLeave={() => setHoveredMeal(null)}
+                              onClick={() => meal && handleMealClick(meal)}
+                              style={{
+                                marginBottom: theme.spacing.md,
+                                padding: theme.spacing.sm,
+                                background: time === 'breakfast' ? '#fff4e6' :
+                                           time === 'lunch' ? '#e6f3ff' : '#f0e6ff',
+                                borderRadius: theme.borderRadius.md,
+                                cursor: meal ? 'pointer' : 'default',
+                                transition: 'all 0.2s',
+                                opacity: meal ? 1 : 0.5,
+                                transform: isMealHovered && meal ? 'scale(1.02)' : 'scale(1)',
+                                border: isMealHovered && meal ? `2px solid ${theme.colors.primary}` : '2px solid transparent',
+                                position: 'relative',
+                                overflow: 'hidden'
+                              }}
+                            >
+                              {/* Time Badge */}
+                              <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: theme.spacing.xs
+                              }}>
+                                <span style={{
+                                  fontSize: theme.typography.fontSizes.xs,
+                                  fontWeight: theme.typography.fontWeights.bold,
+                                  textTransform: 'uppercase',
+                                  color: time === 'breakfast' ? '#b45f06' :
+                                         time === 'lunch' ? '#0b5e8a' : '#6b21a5',
+                                  background: 'rgba(255,255,255,0.5)',
+                                  padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+                                  borderRadius: theme.borderRadius.sm
+                                }}>
+                                  {time === 'breakfast' ? '🍳 Breakfast' :
+                                   time === 'lunch' ? '🥘 Lunch' : '🍲 Dinner'}
+                                </span>
+                                {meal && (
+                                  <span style={{
+                                    fontSize: theme.typography.fontSizes.xs,
+                                    color: theme.colors.text.muted
+                                  }}>
+                                    🔥 {meal.calories} kcal
+                                  </span>
+                                )}
+                              </div>
+
+                              {meal ? (
+                                <>
+                                  {/* Meal Image */}
+                                  <img
+                                    src={meal.image_url || 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=400'}
+                                    alt={meal.name}
+                                    style={{
+                                      width: '100%',
+                                      height: windowWidth < 768 ? '80px' : '60px',
+                                      objectFit: 'cover',
+                                      borderRadius: theme.borderRadius.sm,
+                                      marginBottom: theme.spacing.xs
+                                    }}
+                                  />
+                                  
+                                  {/* Meal Name */}
+                                  <div style={{
+                                    fontWeight: theme.typography.fontWeights.semibold,
+                                    fontSize: windowWidth < 768 ? theme.typography.fontSizes.sm : theme.typography.fontSizes.xs,
+                                    color: theme.colors.text.primary,
+                                    marginBottom: theme.spacing.xs,
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden'
+                                  }}>
+                                    {meal.name}
+                                  </div>
+
+                                  {/* Portion Preview */}
+                                  <div style={{
+                                    fontSize: theme.typography.fontSizes.xs,
+                                    color: theme.colors.text.muted,
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 1,
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden'
+                                  }}>
+                                    {meal.portion}
+                                  </div>
+
+                                  {/* Tap indicator */}
+                                  <div style={{
+                                    marginTop: theme.spacing.xs,
+                                    fontSize: theme.typography.fontSizes.xs,
+                                    color: theme.colors.primary,
+                                    textAlign: 'right',
+                                    opacity: isMealHovered ? 1 : 0.7
+                                  }}>
+                                    Tap for details →
+                                  </div>
+                                </>
+                              ) : (
+                                <div style={{
+                                  height: windowWidth < 768 ? '100px' : '80px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  background: 'rgba(255,255,255,0.5)',
+                                  borderRadius: theme.borderRadius.sm,
+                                  color: theme.colors.text.muted,
+                                  fontSize: theme.typography.fontSizes.sm
+                                }}>
+                                  No meal assigned
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
+
+          {/* Weekly Summary */}
+          {weeklyPlan && (
+            <div style={{
+              marginTop: theme.spacing.xl,
+              background: 'white',
+              borderRadius: theme.borderRadius.lg,
+              padding: theme.spacing.lg,
+              border: `1px solid ${theme.colors.border}`,
+              boxShadow: theme.shadows.sm
+            }}>
+              <h3 style={{
+                margin: `0 0 ${theme.spacing.md} 0`,
+                fontSize: theme.typography.fontSizes.lg,
+                color: theme.colors.text.primary,
+                display: 'flex',
+                alignItems: 'center',
+                gap: theme.spacing.sm
+              }}>
+                <span>📊</span> Week Summary
+              </h3>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: windowWidth < 768 ? '1fr' : 'repeat(3, 1fr)',
+                gap: theme.spacing.md
+              }}>
+                <div style={{
+                  background: '#fff4e6',
+                  padding: theme.spacing.md,
+                  borderRadius: theme.borderRadius.md
+                }}>
+                  <div style={{ fontSize: theme.typography.fontSizes.sm, color: '#b45f06', marginBottom: theme.spacing.xs }}>
+                    🍳 Breakfast
+                  </div>
+                  <div style={{ fontSize: theme.typography.fontSizes.xl, fontWeight: theme.typography.fontWeights.bold, color: '#b45f06' }}>
+                    {days.filter(day => weeklyPlan[`${day}_breakfast`]).length}/7
+                  </div>
+                  <div style={{ fontSize: theme.typography.fontSizes.xs, color: '#b45f06' }}>
+                    meals planned
+                  </div>
+                </div>
+                <div style={{
+                  background: '#e6f3ff',
+                  padding: theme.spacing.md,
+                  borderRadius: theme.borderRadius.md
+                }}>
+                  <div style={{ fontSize: theme.typography.fontSizes.sm, color: '#0b5e8a', marginBottom: theme.spacing.xs }}>
+                    🥘 Lunch
+                  </div>
+                  <div style={{ fontSize: theme.typography.fontSizes.xl, fontWeight: theme.typography.fontWeights.bold, color: '#0b5e8a' }}>
+                    {days.filter(day => weeklyPlan[`${day}_lunch`]).length}/7
+                  </div>
+                  <div style={{ fontSize: theme.typography.fontSizes.xs, color: '#0b5e8a' }}>
+                    meals planned
+                  </div>
+                </div>
+                <div style={{
+                  background: '#f0e6ff',
+                  padding: theme.spacing.md,
+                  borderRadius: theme.borderRadius.md
+                }}>
+                  <div style={{ fontSize: theme.typography.fontSizes.sm, color: '#6b21a5', marginBottom: theme.spacing.xs }}>
+                    🍲 Dinner
+                  </div>
+                  <div style={{ fontSize: theme.typography.fontSizes.xl, fontWeight: theme.typography.fontWeights.bold, color: '#6b21a5' }}>
+                    {days.filter(day => weeklyPlan[`${day}_dinner`]).length}/7
+                  </div>
+                  <div style={{ fontSize: theme.typography.fontSizes.xs, color: '#6b21a5' }}>
+                    meals planned
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Meal Detail Modal */}
+        {isMealModalOpen && selectedMeal && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 2000,
+            padding: theme.spacing.lg,
+            animation: theme.animations.fadeIn
+          }} onClick={() => setIsMealModalOpen(false)}>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: theme.borderRadius.xl,
+              maxWidth: '500px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              position: 'relative',
+              boxShadow: theme.shadows.xl
+            }} onClick={(e) => e.stopPropagation()}>
+              
+              {/* Close button */}
+              <button
+                onClick={() => setIsMealModalOpen(false)}
+                style={{
+                  position: 'absolute',
+                  top: theme.spacing.md,
+                  right: theme.spacing.md,
+                  background: 'white',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: theme.borderRadius.full,
+                  boxShadow: theme.shadows.md,
+                  zIndex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = theme.colors.danger
+                  e.currentTarget.style.color = 'white'
+                  e.currentTarget.style.transform = 'scale(1.1)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'white'
+                  e.currentTarget.style.color = theme.colors.text.primary
+                  e.currentTarget.style.transform = 'scale(1)'
+                }}
+              >
+                ✕
+              </button>
+
+              {/* Meal Image */}
+              <img 
+                src={selectedMeal.image_url || 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=400'} 
+                alt={selectedMeal.name}
+                style={{ 
+                  width: '100%', 
+                  height: windowWidth < 768 ? '200px' : '250px', 
+                  objectFit: 'cover',
+                  borderTopLeftRadius: theme.borderRadius.xl,
+                  borderTopRightRadius: theme.borderRadius.xl
+                }}
+              />
+
+              {/* Meal Details */}
+              <div style={{ padding: theme.spacing.xl }}>
+                <h2 style={{
+                  margin: `0 0 ${theme.spacing.xs} 0`,
+                  fontSize: windowWidth < 768 ? theme.typography.fontSizes.xl : theme.typography.fontSizes.xxl,
+                  color: theme.colors.text.primary,
+                  fontWeight: theme.typography.fontWeights.bold
+                }}>
+                  {selectedMeal.name}
+                </h2>
+                
+                {/* Tags */}
+                <div style={{
+                  display: 'flex',
+                  gap: theme.spacing.sm,
+                  marginBottom: theme.spacing.lg,
+                  flexWrap: 'wrap'
+                }}>
+                  <span style={{
+                    background: theme.colors.primaryGradient,
+                    color: 'white',
+                    padding: `${theme.spacing.xs} ${theme.spacing.md}`,
+                    borderRadius: theme.borderRadius.full,
+                    fontSize: theme.typography.fontSizes.sm,
+                    fontWeight: theme.typography.fontWeights.medium,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}>
+                    {selectedMeal.category === 'breakfast' ? '🍳' : selectedMeal.category === 'lunch' ? '🥘' : '🍲'} {selectedMeal.category}
+                  </span>
+                  <span style={{
+                    background: 'rgba(72, 187, 120, 0.1)',
+                    color: theme.colors.secondaryDark,
+                    padding: `${theme.spacing.xs} ${theme.spacing.md}`,
+                    borderRadius: theme.borderRadius.full,
+                    fontSize: theme.typography.fontSizes.sm,
+                    fontWeight: theme.typography.fontWeights.medium,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}>
+                    🔥 {selectedMeal.calories} kcal
+                  </span>
+                  {selectedMeal.prep_time && (
+                    <span style={{
+                      background: 'rgba(237, 137, 54, 0.1)',
+                      color: '#dd6b20',
+                      padding: `${theme.spacing.xs} ${theme.spacing.md}`,
+                      borderRadius: theme.borderRadius.full,
+                      fontSize: theme.typography.fontSizes.sm,
+                      fontWeight: theme.typography.fontWeights.medium,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}>
+                      ⏱️ {selectedMeal.prep_time}
+                    </span>
+                  )}
+                </div>
+
+                {/* Portion */}
+                <div style={{ marginBottom: theme.spacing.lg }}>
+                  <h3 style={{
+                    fontSize: theme.typography.fontSizes.lg,
+                    margin: `0 0 ${theme.spacing.sm} 0`,
+                    color: theme.colors.text.secondary,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: theme.spacing.sm
+                  }}>
+                    <span style={{ fontSize: '24px' }}>🍽️</span> Portion Advice
+                  </h3>
+                  <p style={{
+                    margin: 0,
+                    fontSize: theme.typography.fontSizes.base,
+                    color: theme.colors.text.primary,
+                    lineHeight: 1.6,
+                    background: '#f7fafc',
+                    padding: theme.spacing.md,
+                    borderRadius: theme.borderRadius.md
+                  }}>
+                    {selectedMeal.portion}
+                  </p>
+                </div>
+
+                {/* Ingredients */}
+                <div>
+                  <h3 style={{
+                    fontSize: theme.typography.fontSizes.lg,
+                    margin: `0 0 ${theme.spacing.sm} 0`,
+                    color: theme.colors.text.secondary,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: theme.spacing.sm
+                  }}>
+                    <span style={{ fontSize: '24px' }}>🧺</span> Ingredients
+                  </h3>
+                  <div style={{
+                    background: '#f7fafc',
+                    borderRadius: theme.borderRadius.md,
+                    padding: theme.spacing.md
+                  }}>
+                    {selectedMeal.ingredients?.map((item, index) => (
+                      <div key={index} style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        padding: theme.spacing.sm,
+                        borderBottom: index < selectedMeal.ingredients.length - 1 ? `1px solid ${theme.colors.border}` : 'none'
+                      }}>
+                        <span style={{
+                          fontWeight: theme.typography.fontWeights.medium,
+                          color: theme.colors.text.primary
+                        }}>{item.name}</span>
+                        <span style={{
+                          color: theme.colors.primary,
+                          fontWeight: theme.typography.fontWeights.semibold,
+                          background: 'rgba(102, 126, 234, 0.1)',
+                          padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+                          borderRadius: theme.borderRadius.sm
+                        }}>{item.quantity}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Close button */}
+                <button
+                  onClick={() => setIsMealModalOpen(false)}
+                  style={{
+                    width: '100%',
+                    padding: theme.spacing.md,
+                    marginTop: theme.spacing.xl,
+                    background: theme.colors.primaryGradient,
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: theme.borderRadius.full,
+                    fontSize: theme.typography.fontSizes.base,
+                    fontWeight: theme.typography.fontWeights.semibold,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    boxShadow: theme.shadows.md
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)'
+                    e.currentTarget.style.boxShadow = theme.shadows.hover
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)'
+                    e.currentTarget.style.boxShadow = theme.shadows.md
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   )
 }

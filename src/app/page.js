@@ -8,6 +8,7 @@ import styles from "./page.module.css";
 import { supabase } from '../lib/supabase'
 import AddMealModal from './components/AddMealModal'
 import EditMealModal from './components/EditMealModal'
+import { theme, globalStyles } from './styles/globalStyles'
 
 export default function Home() {
   const router = useRouter()
@@ -21,6 +22,7 @@ export default function Home() {
   const [selectedMeal, setSelectedMeal] = useState(null)
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 0)
   const [authChecked, setAuthChecked] = useState(false)
+  const [hoveredMeal, setHoveredMeal] = useState(null)
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth)
@@ -126,304 +128,587 @@ export default function Home() {
     ))
   }
 
-  // Show loading state while checking auth
   if (loading || !authChecked) {
     return (
       <div style={{ 
-        height: '100vh', 
-        display: 'flex', 
+        minHeight: '100vh',
+        background: theme.colors.primaryGradient,
+        display: 'flex',
         justifyContent: 'center', 
         alignItems: 'center',
         flexDirection: 'column',
-        gap: '20px'
+        gap: theme.spacing.xl
       }}>
-        <div style={{ fontSize: '48px' }}>🍽️</div>
-        <div style={{ fontSize: '18px', color: '#666' }}>Loading meal planner...</div>
+        <div style={{ 
+          fontSize: '64px',
+          animation: theme.animations.bounce
+        }}>🍽️</div>
+        <div style={{ 
+          fontSize: theme.typography.fontSizes.xl,
+          color: 'white',
+          fontWeight: theme.typography.fontWeights.medium
+        }}>Loading meal planner...</div>
         <div style={{ 
           width: '50px', 
           height: '50px', 
-          border: '3px solid #f3f3f3',
-          borderTop: '3px solid #0070f3',
-          borderRadius: '50%',
+          border: '3px solid rgba(255,255,255,0.3)',
+          borderTop: `3px solid white`,
+          borderRadius: theme.borderRadius.full,
           animation: 'spin 1s linear infinite'
         }} />
-        <style jsx>{`
+        <style>{`
           @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
           }
+          ${globalStyles}
         `}</style>
       </div>
     )
   }
 
   if (!user) {
-    return null // Will redirect to login
+    return null
   }
 
   const filteredMeals = selectedCategory === 'all' 
     ? meals 
     : meals.filter(meal => meal.category === selectedCategory)
 
+  const categories = [
+    { id: 'all', label: 'All Meals', icon: '🍽️' },
+    { id: 'breakfast', label: 'Breakfast', icon: '🍳' },
+    { id: 'lunch', label: 'Lunch', icon: '🥘' },
+    { id: 'dinner', label: 'Dinner', icon: '🍲' }
+  ]
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        {/* Header - Mobile Responsive */}
-        <div style={{ 
-          display: 'flex', 
-          flexDirection: windowWidth < 768 ? 'column' : 'row',
-          justifyContent: 'space-between', 
-          alignItems: windowWidth < 768 ? 'flex-start' : 'center',
-          width: '100%',
-          padding: '20px',
-          borderBottom: '1px solid #eee',
-          gap: '10px'
+    <>
+      <style>{globalStyles}</style>
+      <div style={{
+        minHeight: '100vh',
+        background: theme.colors.background,
+        animation: theme.animations.fadeIn
+      }}>
+        {/* Header */}
+        <div style={{
+          background: 'white',
+          borderBottom: `1px solid ${theme.colors.border}`,
+          boxShadow: theme.shadows.sm,
+          position: 'sticky',
+          top: 0,
+          zIndex: 100,
+          backdropFilter: 'blur(10px)',
+          background: 'rgba(255,255,255,0.9)'
         }}>
-          <div style={{ 
-            display: 'flex', 
+          <div style={{
+            maxWidth: '1200px',
+            margin: '0 auto',
+            padding: theme.spacing.md,
+            display: 'flex',
             flexDirection: windowWidth < 768 ? 'column' : 'row',
-            alignItems: windowWidth < 768 ? 'flex-start' : 'center',
-            gap: '10px',
-            width: windowWidth < 768 ? '100%' : 'auto'
+            justifyContent: 'space-between',
+            alignItems: windowWidth < 768 ? 'stretch' : 'center',
+            gap: theme.spacing.md
           }}>
-            <h1 style={{ margin: 0, fontSize: windowWidth < 768 ? '20px' : '24px' }}>
-              🍽️ Meal Planner
-            </h1>
-            <Link href="/weekly" style={{
-              color: '#0070f3',
-              textDecoration: 'none',
-              fontSize: '16px',
-              whiteSpace: 'nowrap'
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: theme.spacing.lg,
+              flexWrap: 'wrap'
             }}>
-              📅 Weekly Plan →
-            </Link>
-          </div>
-          
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '15px',
-            flexWrap: 'wrap',
-            width: windowWidth < 768 ? '100%' : 'auto',
-            justifyContent: windowWidth < 768 ? 'space-between' : 'flex-end'
-          }}>
-            <span style={{ 
-              fontSize: '14px',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              maxWidth: windowWidth < 768 ? '150px' : '200px'
-            }}>
-              {user?.email}
-              {userRole === 'admin' && (
-                <span style={{ 
-                  marginLeft: '8px', 
-                  background: '#0070f3', 
-                  color: 'white',
-                  padding: '2px 8px',
-                  borderRadius: '12px',
-                  fontSize: '10px',
-                  whiteSpace: 'nowrap'
+              <Link href="/" style={{ textDecoration: 'none' }}>
+                <h1 style={{
+                  margin: 0,
+                  fontSize: windowWidth < 768 ? theme.typography.fontSizes.xl : theme.typography.fontSizes.xxl,
+                  background: theme.colors.primaryGradient,
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  fontWeight: theme.typography.fontWeights.bold
                 }}>
-                  Admin
-                </span>
-              )}
-            </span>
-            <button 
-              onClick={async () => {
-                await supabase.auth.signOut()
-                router.push('/auth/login')
-              }}  
-              style={{
-                padding: '5px 10px',
-                fontSize: '14px',
-                whiteSpace: 'nowrap',
-                background: '#dc3545',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
+                  🍽️ Meal Planner
+                </h1>
+              </Link>
+              
+              <Link href="/weekly" style={{
+                color: theme.colors.primary,
+                textDecoration: 'none',
+                fontSize: theme.typography.fontSizes.lg,
+                fontWeight: theme.typography.fontWeights.medium,
+                padding: `${theme.spacing.xs} ${theme.spacing.md}`,
+                borderRadius: theme.borderRadius.full,
+                background: 'rgba(102, 126, 234, 0.1)',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                gap: theme.spacing.xs
               }}
-            >
-              Sign Out
-            </button>
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(102, 126, 234, 0.2)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(102, 126, 234, 0.1)'}
+              >
+                <span>📅</span> Weekly Plan →
+              </Link>
+            </div>
+
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: theme.spacing.lg,
+              flexWrap: 'wrap'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: theme.spacing.sm,
+                background: '#f7fafc',
+                padding: `${theme.spacing.xs} ${theme.spacing.md}`,
+                borderRadius: theme.borderRadius.full,
+                border: `1px solid ${theme.colors.border}`
+              }}>
+                <span style={{ fontSize: theme.typography.fontSizes.lg }}>👤</span>
+                <span style={{
+                  fontSize: theme.typography.fontSizes.sm,
+                  color: theme.colors.text.secondary,
+                  maxWidth: windowWidth < 768 ? '120px' : '200px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}>
+                  {user?.email}
+                </span>
+                {userRole === 'admin' && (
+                  <span style={{
+                    background: theme.colors.primaryGradient,
+                    color: 'white',
+                    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+                    borderRadius: theme.borderRadius.full,
+                    fontSize: theme.typography.fontSizes.xs,
+                    fontWeight: theme.typography.fontWeights.semibold,
+                    marginLeft: theme.spacing.xs
+                  }}>
+                    Admin
+                  </span>
+                )}
+              </div>
+              
+              <button 
+                onClick={async () => {
+                  await supabase.auth.signOut()
+                  router.push('/auth/login')
+                }} 
+                style={{
+                  padding: `${theme.spacing.sm} ${theme.spacing.lg}`,
+                  fontSize: theme.typography.fontSizes.sm,
+                  background: theme.colors.danger,
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: theme.borderRadius.full,
+                  cursor: 'pointer',
+                  fontWeight: theme.typography.fontWeights.medium,
+                  boxShadow: theme.shadows.sm,
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: theme.spacing.xs
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = theme.colors.dangerDark
+                  e.currentTarget.style.transform = 'translateY(-2px)'
+                  e.currentTarget.style.boxShadow = theme.shadows.md
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = theme.colors.danger
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.boxShadow = theme.shadows.sm
+                }}
+              >
+                <span>🚪</span> Sign Out
+              </button>
+            </div>
           </div>
         </div>
 
-        <div style={{ padding: '20px' }}>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
+        {/* Main Content */}
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: theme.spacing.xl }}>
+          {/* Header with Add Button */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '20px'
+            marginBottom: theme.spacing.xl,
+            flexWrap: 'wrap',
+            gap: theme.spacing.md
           }}>
-            <h2>Our Meal Library ({meals.length} meals)</h2>
+            <div>
+              <h2 style={{
+                fontSize: windowWidth < 768 ? theme.typography.fontSizes.xl : theme.typography.fontSizes.xxl,
+                color: theme.colors.text.primary,
+                margin: `0 0 ${theme.spacing.xs} 0`,
+                fontWeight: theme.typography.fontWeights.bold
+              }}>
+                Our Meal Library
+              </h2>
+              <p style={{
+                color: theme.colors.text.muted,
+                margin: 0,
+                fontSize: theme.typography.fontSizes.base
+              }}>
+                {meals.length} delicious meals to choose from
+              </p>
+            </div>
             
             {userRole === 'admin' && (
               <button 
                 onClick={() => setIsAddModalOpen(true)}
                 style={{
-                  background: '#28a745',
+                  background: theme.colors.primaryGradient,
                   color: 'white',
                   border: 'none',
-                  padding: '10px 20px',
-                  borderRadius: '5px',
+                  padding: `${theme.spacing.md} ${theme.spacing.xl}`,
+                  borderRadius: theme.borderRadius.full,
                   cursor: 'pointer',
-                  fontWeight: 'bold'
+                  fontWeight: theme.typography.fontWeights.semibold,
+                  fontSize: theme.typography.fontSizes.base,
+                  boxShadow: theme.shadows.md,
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: theme.spacing.sm
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)'
+                  e.currentTarget.style.boxShadow = theme.shadows.hover
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.boxShadow = theme.shadows.md
                 }}
               >
-                + Add New Meal
+                <span>➕</span> Add New Meal
               </button>
             )}
           </div>
           
           {/* Category Filter */}
-          <div style={{ marginBottom: '20px' }}>
-            <button 
-              onClick={() => setSelectedCategory('all')}
-              style={{
-                background: selectedCategory === 'all' ? '#0070f3' : '#f0f0f0',
-                color: selectedCategory === 'all' ? 'white' : 'black',
-                border: 'none',
-                padding: '8px 16px',
-                marginRight: '10px',
-                borderRadius: '20px',
-                cursor: 'pointer'
-              }}
-            >
-              All
-            </button>
-            <button 
-              onClick={() => setSelectedCategory('breakfast')}
-              style={{
-                background: selectedCategory === 'breakfast' ? '#0070f3' : '#f0f0f0',
-                color: selectedCategory === 'breakfast' ? 'white' : 'black',
-                border: 'none',
-                padding: '8px 16px',
-                marginRight: '10px',
-                borderRadius: '20px',
-                cursor: 'pointer'
-              }}
-            >
-              Breakfast
-            </button>
-            <button 
-              onClick={() => setSelectedCategory('lunch')}
-              style={{
-                background: selectedCategory === 'lunch' ? '#0070f3' : '#f0f0f0',
-                color: selectedCategory === 'lunch' ? 'white' : 'black',
-                border: 'none',
-                padding: '8px 16px',
-                marginRight: '10px',
-                borderRadius: '20px',
-                cursor: 'pointer'
-              }}
-            >
-              Lunch
-            </button>
-            <button 
-              onClick={() => setSelectedCategory('dinner')}
-              style={{
-                background: selectedCategory === 'dinner' ? '#0070f3' : '#f0f0f0',
-                color: selectedCategory === 'dinner' ? 'white' : 'black',
-                border: 'none',
-                padding: '8px 16px',
-                borderRadius: '20px',
-                cursor: 'pointer'
-              }}
-            >
-              Dinner
-            </button>
+          <div style={{
+            display: 'flex',
+            gap: theme.spacing.sm,
+            marginBottom: theme.spacing.xl,
+            flexWrap: 'wrap',
+            background: 'white',
+            padding: theme.spacing.md,
+            borderRadius: theme.borderRadius.lg,
+            boxShadow: theme.shadows.sm,
+            border: `1px solid ${theme.colors.border}`
+          }}>
+            {categories.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
+                style={{
+                  background: selectedCategory === cat.id ? theme.colors.primaryGradient : 'transparent',
+                  color: selectedCategory === cat.id ? 'white' : theme.colors.text.secondary,
+                  border: 'none',
+                  padding: `${theme.spacing.sm} ${theme.spacing.lg}`,
+                  borderRadius: theme.borderRadius.full,
+                  cursor: 'pointer',
+                  fontWeight: theme.typography.fontWeights.medium,
+                  fontSize: theme.typography.fontSizes.base,
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: theme.spacing.xs,
+                  flex: windowWidth < 768 ? 1 : 'none'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedCategory !== cat.id) {
+                    e.currentTarget.style.background = 'rgba(102, 126, 234, 0.1)'
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedCategory !== cat.id) {
+                    e.currentTarget.style.background = 'transparent'
+                  }
+                }}
+              >
+                <span>{cat.icon}</span> {cat.label}
+              </button>
+            ))}
           </div>
 
           {/* Meal Grid */}
           {meals.length === 0 ? (
-            <div style={{ 
-              textAlign: 'center', 
-              padding: '50px',
-              background: '#f9f9f9',
-              borderRadius: '8px'
+            <div style={{
+              textAlign: 'center',
+              padding: theme.spacing.xxl,
+              background: 'white',
+              borderRadius: theme.borderRadius.lg,
+              border: `2px dashed ${theme.colors.border}`,
+              animation: theme.animations.fadeIn
             }}>
-              <p style={{ fontSize: '18px', marginBottom: '20px' }}>
-                No meals yet. Click "Add New Meal" to get started!
+              <div style={{ fontSize: '64px', marginBottom: theme.spacing.lg }}>🍽️</div>
+              <h3 style={{ color: theme.colors.text.primary, marginBottom: theme.spacing.sm }}>
+                No meals yet
+              </h3>
+              <p style={{ color: theme.colors.text.muted, marginBottom: theme.spacing.lg }}>
+                Click "Add New Meal" to get started with your meal library!
               </p>
+              {userRole === 'admin' && (
+                <button
+                  onClick={() => setIsAddModalOpen(true)}
+                  style={{
+                    background: theme.colors.primaryGradient,
+                    color: 'white',
+                    border: 'none',
+                    padding: `${theme.spacing.md} ${theme.spacing.xl}`,
+                    borderRadius: theme.borderRadius.full,
+                    cursor: 'pointer',
+                    fontWeight: theme.typography.fontWeights.semibold,
+                    fontSize: theme.typography.fontSizes.base
+                  }}
+                >
+                  ✨ Add Your First Meal
+                </button>
+              )}
             </div>
           ) : (
-            <div style={{ 
-              display: 'grid', 
+            <div style={{
+              display: 'grid',
               gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-              gap: '20px'
+              gap: theme.spacing.lg,
+              animation: theme.animations.fadeIn
             }}>
-              {filteredMeals.map(meal => (
-                <div key={meal.id} style={{
-                  border: '1px solid #ddd',
-                  borderRadius: '8px',
-                  overflow: 'hidden',
-                  background: 'white',
-                  position: 'relative'
-                }}>
-                  {userRole === 'admin' && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '10px',
-                      right: '10px',
-                      display: 'flex',
-                      gap: '5px',
-                      zIndex: 1
-                    }}>
-                      <button 
-                        onClick={() => {
-                          setSelectedMeal(meal)
-                          setIsEditModalOpen(true)
-                        }}
+              {filteredMeals.map((meal, index) => (
+                <div
+                  key={meal.id}
+                  style={{
+                    animation: `slideUp 0.4s ease-out ${index * 0.05}s both`,
+                    transform: hoveredMeal === meal.id ? 'translateY(-8px)' : 'translateY(0)'
+                  }}
+                >
+                  <div style={{
+                    border: `1px solid ${theme.colors.border}`,
+                    borderRadius: theme.borderRadius.lg,
+                    overflow: 'hidden',
+                    background: theme.colors.cardBg,
+                    boxShadow: hoveredMeal === meal.id ? theme.shadows.hover : theme.shadows.md,
+                    transition: 'all 0.3s ease',
+                    position: 'relative',
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column'
+                  }}
+                  onMouseEnter={() => setHoveredMeal(meal.id)}
+                  onMouseLeave={() => setHoveredMeal(null)}
+                  >
+                    {/* Image */}
+                    <div style={{ position: 'relative', overflow: 'hidden' }}>
+                      <img 
+                        src={meal.image_url || 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=400'} 
+                        alt={meal.name}
                         style={{
-                          background: '#0070f3',
-                          color: 'white',
-                          border: 'none',
-                          padding: '5px 10px',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontSize: '12px'
+                          width: '100%',
+                          height: '200px',
+                          objectFit: 'cover',
+                          transition: 'transform 0.3s ease',
+                          transform: hoveredMeal === meal.id ? 'scale(1.05)' : 'scale(1)'
                         }}
-                      >
-                        Edit
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteMeal(meal.id)}
-                        style={{
-                          background: '#dc3545',
-                          color: 'white',
-                          border: 'none',
-                          padding: '5px 10px',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontSize: '12px'
-                        }}
-                      >
-                        Delete
-                      </button>
+                      />
+                      {hoveredMeal === meal.id && (
+                        <div style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          background: 'rgba(0,0,0,0.1)'
+                        }} />
+                      )}
                     </div>
-                  )}
-                  
-                  <img 
-                    src={meal.image_url || 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=400'} 
-                    alt={meal.name}
-                    style={{ width: '100%', height: '180px', objectFit: 'cover' }}
-                  />
-                  <div style={{ padding: '15px' }}>
-                    <h3>{meal.name}</h3>
-                    <p><strong>Category:</strong> {meal.category}</p>
-                    <p><strong>Calories:</strong> ~{meal.calories} kcal</p>
-                    <p><strong>Portion:</strong> {meal.portion}</p>
-                    <p><strong>Prep time:</strong> {meal.prep_time}</p>
-                    
-                    <details>
-                      <summary style={{ cursor: 'pointer', color: '#0070f3' }}>View Ingredients</summary>
-                      <ul style={{ marginTop: '10px', paddingLeft: '20px' }}>
-                        {meal.ingredients?.map((item, index) => (
-                          <li key={index}>{item.name} — {item.quantity}</li>
-                        ))}
-                      </ul>
-                    </details>
+
+                    {/* Admin Controls */}
+                    {userRole === 'admin' && (
+                      <div style={{
+                        position: 'absolute',
+                        top: theme.spacing.md,
+                        right: theme.spacing.md,
+                        display: 'flex',
+                        gap: theme.spacing.xs,
+                        zIndex: 1
+                      }}>
+                        <button 
+                          onClick={() => {
+                            setSelectedMeal(meal)
+                            setIsEditModalOpen(true)
+                          }}
+                          style={{
+                            background: 'white',
+                            color: theme.colors.primary,
+                            border: 'none',
+                            padding: theme.spacing.sm,
+                            borderRadius: theme.borderRadius.sm,
+                            cursor: 'pointer',
+                            fontSize: theme.typography.fontSizes.sm,
+                            fontWeight: theme.typography.fontWeights.medium,
+                            boxShadow: theme.shadows.md,
+                            transition: 'all 0.2s',
+                            width: '36px',
+                            height: '36px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = theme.colors.primary
+                            e.currentTarget.style.color = 'white'
+                            e.currentTarget.style.transform = 'scale(1.1)'
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'white'
+                            e.currentTarget.style.color = theme.colors.primary
+                            e.currentTarget.style.transform = 'scale(1)'
+                          }}
+                        >
+                          ✏️
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteMeal(meal.id)}
+                          style={{
+                            background: 'white',
+                            color: theme.colors.danger,
+                            border: 'none',
+                            padding: theme.spacing.sm,
+                            borderRadius: theme.borderRadius.sm,
+                            cursor: 'pointer',
+                            fontSize: theme.typography.fontSizes.sm,
+                            boxShadow: theme.shadows.md,
+                            transition: 'all 0.2s',
+                            width: '36px',
+                            height: '36px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = theme.colors.danger
+                            e.currentTarget.style.color = 'white'
+                            e.currentTarget.style.transform = 'scale(1.1)'
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'white'
+                            e.currentTarget.style.color = theme.colors.danger
+                            e.currentTarget.style.transform = 'scale(1)'
+                          }}
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Content */}
+                    <div style={{ padding: theme.spacing.lg, flex: 1 }}>
+                      <h3 style={{
+                        margin: `0 0 ${theme.spacing.xs} 0`,
+                        fontSize: theme.typography.fontSizes.lg,
+                        color: theme.colors.text.primary,
+                        fontWeight: theme.typography.fontWeights.semibold
+                      }}>
+                        {meal.name}
+                      </h3>
+                      
+                      <div style={{
+                        display: 'flex',
+                        gap: theme.spacing.xs,
+                        marginBottom: theme.spacing.md,
+                        flexWrap: 'wrap'
+                      }}>
+                        <span style={{
+                          background: 'rgba(102, 126, 234, 0.1)',
+                          color: theme.colors.primary,
+                          padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+                          borderRadius: theme.borderRadius.full,
+                          fontSize: theme.typography.fontSizes.xs,
+                          fontWeight: theme.typography.fontWeights.medium,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}>
+                          {meal.category === 'breakfast' ? '🍳' : meal.category === 'lunch' ? '🥘' : '🍲'} {meal.category}
+                        </span>
+                        <span style={{
+                          background: 'rgba(72, 187, 120, 0.1)',
+                          color: theme.colors.secondaryDark,
+                          padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+                          borderRadius: theme.borderRadius.full,
+                          fontSize: theme.typography.fontSizes.xs,
+                          fontWeight: theme.typography.fontWeights.medium,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}>
+                          🔥 {meal.calories} kcal
+                        </span>
+                        {meal.prep_time && (
+                          <span style={{
+                            background: 'rgba(237, 137, 54, 0.1)',
+                            color: '#dd6b20',
+                            padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+                            borderRadius: theme.borderRadius.full,
+                            fontSize: theme.typography.fontSizes.xs,
+                            fontWeight: theme.typography.fontWeights.medium,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}>
+                            ⏱️ {meal.prep_time}
+                          </span>
+                        )}
+                      </div>
+
+                      <p style={{
+                        color: theme.colors.text.secondary,
+                        fontSize: theme.typography.fontSizes.sm,
+                        margin: `0 0 ${theme.spacing.md} 0`,
+                        lineHeight: 1.6
+                      }}>
+                        <strong>Portion:</strong> {meal.portion}
+                      </p>
+
+                      <details style={{
+                        marginTop: 'auto'
+                      }}>
+                        <summary style={{
+                          cursor: 'pointer',
+                          color: theme.colors.primary,
+                          fontSize: theme.typography.fontSizes.sm,
+                          fontWeight: theme.typography.fontWeights.medium,
+                          padding: theme.spacing.sm,
+                          borderRadius: theme.borderRadius.sm,
+                          background: 'rgba(102, 126, 234, 0.05)',
+                          listStyle: 'none'
+                        }}>
+                          📋 View Ingredients
+                        </summary>
+                        <ul style={{
+                          marginTop: theme.spacing.md,
+                          paddingLeft: theme.spacing.lg,
+                          color: theme.colors.text.secondary
+                        }}>
+                          {meal.ingredients?.map((item, index) => (
+                            <li key={index} style={{
+                              padding: theme.spacing.xs,
+                              borderBottom: index < meal.ingredients.length - 1 ? `1px solid ${theme.colors.border}` : 'none',
+                              display: 'flex',
+                              justifyContent: 'space-between'
+                            }}>
+                              <span>{item.name}</span>
+                              <span style={{ color: theme.colors.primary, fontWeight: theme.typography.fontWeights.medium }}>
+                                {item.quantity}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -431,6 +716,7 @@ export default function Home() {
           )}
         </div>
 
+        {/* Modals */}
         <AddMealModal 
           isOpen={isAddModalOpen}
           onClose={() => setIsAddModalOpen(false)}
@@ -446,7 +732,7 @@ export default function Home() {
           meal={selectedMeal}
           onMealUpdated={handleMealUpdated}
         />
-      </main>
-    </div>
+      </div>
+    </>
   )
 }
