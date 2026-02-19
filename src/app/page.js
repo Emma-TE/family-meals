@@ -5,6 +5,9 @@ import styles from "./page.module.css";
 import { supabase } from '../lib/supabase'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import AddMealModal from './components/AddMealModal'
+import EditMealModal from './components/EditMealModal'
+import Link from 'next/link'
 
 export default function Home() {
   const router = useRouter()
@@ -13,6 +16,10 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [meals, setMeals] = useState([])
   const [selectedCategory, setSelectedCategory] = useState('all')
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [selectedMeal, setSelectedMeal] = useState(null)
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 0)
 
   useEffect(() => {
     // Check if user is logged in
@@ -91,6 +98,21 @@ export default function Home() {
       }
     }
   }
+  
+  useEffect(() => {
+    // Handle window resize for responsive design
+    const handleResize = () => setWindowWidth(window.innerWidth)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  const handleMealAdded = (newMeal) => {
+    setMeals([...meals, newMeal])
+  }
+
+  const handleMealUpdated = (updatedMeal) => {
+    setMeals(meals.map(meal => meal.id === updatedMeal.id ? updatedMeal : meal))
+  }
 
   if (loading) {
     return <div style={{ padding: '50px', textAlign: 'center' }}>Loading...</div>
@@ -108,32 +130,75 @@ export default function Home() {
   return (
     <div className={styles.page}>
       <main className={styles.main}>
+        {/* Header - Mobile Responsive */}
         <div style={{ 
           display: 'flex', 
+          flexDirection: window.innerWidth < 768 ? 'column' : 'row',
           justifyContent: 'space-between', 
-          alignItems: 'center',
+          alignItems: window.innerWidth < 768 ? 'flex-start' : 'center',
           width: '100%',
           padding: '20px',
-          borderBottom: '1px solid #eee'
+          borderBottom: '1px solid #eee',
+          gap: '10px'
+      }}>
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: window.innerWidth < 768 ? 'column' : 'row',
+          alignItems: window.innerWidth < 768 ? 'flex-start' : 'center',
+          gap: '10px',
+          width: window.innerWidth < 768 ? '100%' : 'auto'
         }}>
-          <h1>🍽️ Family Meal Planner</h1>
-          <div>
-            <span style={{ marginRight: '15px' }}>
-              {user.email} 
-              {userRole === 'admin' && <span style={{ 
+          <h1 style={{ margin: 0, fontSize: window.innerWidth < 768 ? '20px' : '24px' }}>
+            🍽️ Meal Planner
+          </h1>
+          <Link href="/weekly" style={{
+            color: '#0070f3',
+            textDecoration: 'none',
+            fontSize: '16px',
+            whiteSpace: 'nowrap'
+          }}>
+            📅 Weekly Plan →
+          </Link>
+        </div>
+  
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '15px',
+          flexWrap: 'wrap',
+          width: window.innerWidth < 768 ? '100%' : 'auto',
+          justifyContent: window.innerWidth < 768 ? 'space-between' : 'flex-end'
+        }}>
+          <span style={{ 
+            fontSize: '14px',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            maxWidth: window.innerWidth < 768 ? '150px' : '200px'
+          }}>
+            {user.email}
+            {userRole === 'admin' && (
+              <span style={{ 
                 marginLeft: '8px', 
                 background: '#0070f3', 
                 color: 'white',
                 padding: '2px 8px',
                 borderRadius: '12px',
-                fontSize: '12px'
-              }}>Admin</span>}
-            </span>
-            <button onClick={() => supabase.auth.signOut()}>
-              Sign Out
-            </button>
-          </div>
+                fontSize: '10px',
+                whiteSpace: 'nowrap'
+              }}>
+                Admin
+              </span>
+            )}
+          </span>
+          <button onClick={() => supabase.auth.signOut()} style={{
+            padding: '5px 10px',
+            fontSize: '14px',
+            whiteSpace: 'nowrap'
+          }}>
+            Sign Out
+          </button>
         </div>
+      </div>
 
         <div style={{ padding: '20px' }}>
           <div style={{ 
@@ -146,7 +211,9 @@ export default function Home() {
             
             {/* Admin Only - Add Meal Button */}
             {userRole === 'admin' && (
-              <button style={{
+              <button 
+              onClick={() => setIsAddModalOpen(true)}
+              style={{
                 background: '#28a745',
                 color: 'white',
                 border: 'none',
@@ -242,15 +309,21 @@ export default function Home() {
                     display: 'flex',
                     gap: '5px'
                   }}>
-                    <button style={{
-                      background: '#0070f3',
-                      color: 'white',
-                      border: 'none',
-                      padding: '5px 10px',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      fontSize: '12px'
-                    }}>
+                    <button
+                      onClick={() => {
+                        setSelectedMeal(meal)
+                        setIsEditModalOpen(true)
+                      }}
+                      style={{
+                        background: '#0070f3',
+                        color: 'white',
+                        border: 'none',
+                        padding: '5px 10px',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '12px'
+                      }}
+                    >
                       Edit
                     </button>
                     <button 
@@ -295,6 +368,20 @@ export default function Home() {
             ))}
           </div>
         </div>
+
+        <AddMealModal 
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          onMealAdded={handleMealAdded}
+        />
+
+        <EditMealModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          meal={selectedMeal}
+          onMealUpdated={handleMealUpdated}
+        />
+
       </main>
     </div>
   );
