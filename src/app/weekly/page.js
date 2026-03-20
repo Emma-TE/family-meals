@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { theme, globalStyles } from '../styles/globalStyles'
+import { stitchTheme, globalStyles } from '../styles/stitchTheme'
+import UserMenu from '../components/UserMenu'
 
 export default function WeeklyPage() {
   const router = useRouter()
@@ -188,38 +189,62 @@ export default function WeeklyPage() {
     return day.charAt(0).toUpperCase() + day.slice(1)
   }
 
+  const getMealTimeIcon = (time) => {
+    switch(time) {
+      case 'breakfast': return '🍳'
+      case 'lunch': return '🥘'
+      case 'dinner': return '🍲'
+      default: return '🍽️'
+    }
+  }
+
+  const getMealTimeBg = (time) => {
+    switch(time) {
+      case 'breakfast': return `${stitchTheme.colors.secondary}10`
+      case 'lunch': return `${stitchTheme.colors.tertiary}10`
+      case 'dinner': return `${stitchTheme.colors.primary}10`
+      default: return stitchTheme.colors.surfaceContainerLow
+    }
+  }
+
+  const isMobile = windowWidth < 768
+
   if (loading) {
     return (
       <div style={{ 
         minHeight: '100vh',
-        background: theme.colors.primaryGradient,
+        background: `linear-gradient(135deg, ${stitchTheme.colors.primary} 0%, ${stitchTheme.colors.primaryContainer} 100%)`,
         display: 'flex',
         justifyContent: 'center', 
         alignItems: 'center',
         flexDirection: 'column',
-        gap: theme.spacing.xl
+        gap: '24px'
       }}>
         <div style={{ 
           fontSize: '64px',
-          animation: theme.animations.bounce
+          animation: 'bounce 2s infinite'
         }}>📅</div>
         <div style={{ 
-          fontSize: theme.typography.fontSizes.xl,
+          fontSize: '18px',
           color: 'white',
-          fontWeight: theme.typography.fontWeights.medium
+          fontWeight: 500
         }}>Loading weekly plan...</div>
         <div style={{ 
           width: '50px', 
           height: '50px', 
           border: '3px solid rgba(255,255,255,0.3)',
           borderTop: `3px solid white`,
-          borderRadius: theme.borderRadius.full,
+          borderRadius: '9999px',
           animation: 'spin 1s linear infinite'
         }} />
         <style>{`
           @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+          }
+          @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
           }
           ${globalStyles}
         `}</style>
@@ -232,174 +257,67 @@ export default function WeeklyPage() {
       <style>{globalStyles}</style>
       <div style={{
         minHeight: '100vh',
-        background: theme.colors.background,
-        animation: theme.animations.fadeIn
+        background: stitchTheme.colors.background,
+        animation: 'fadeIn 0.3s ease-out'
       }}>
         {/* Header */}
-        <div style={{
-          background: 'white',
-          borderBottom: `1px solid ${theme.colors.border}`,
-          boxShadow: theme.shadows.sm,
+        {/* Header - Clean Version */}
+        <header style={{
           position: 'sticky',
           top: 0,
-          zIndex: 100,
-          backdropFilter: 'blur(10px)',
-          background: 'rgba(255,255,255,0.9)'
+          zIndex: 50,
+          background: `${stitchTheme.colors.surface}/0.8`,
+          backdropFilter: 'blur(12px)',
+          borderBottom: `1px solid ${stitchTheme.colors.outlineVariant}`,
+          padding: '16px 24px'
         }}>
           <div style={{
             maxWidth: '1200px',
             margin: '0 auto',
-            padding: theme.spacing.md,
             display: 'flex',
-            flexDirection: windowWidth < 768 ? 'column' : 'row',
             justifyContent: 'space-between',
-            alignItems: windowWidth < 768 ? 'stretch' : 'center',
-            gap: theme.spacing.md
+            alignItems: 'center'
           }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: theme.spacing.lg,
-              flexWrap: 'wrap'
+            <h1 style={{
+              margin: 0,
+              fontSize: isMobile ? '22px' : '28px',
+              background: `linear-gradient(135deg, ${stitchTheme.colors.primary} 0%, ${stitchTheme.colors.primaryContainer} 100%)`,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontWeight: 800
             }}>
-              <Link href="/" style={{ textDecoration: 'none' }}>
-                <h1 style={{
-                  margin: 0,
-                  fontSize: windowWidth < 768 ? theme.typography.fontSizes.xl : theme.typography.fontSizes.xxl,
-                  background: theme.colors.primaryGradient,
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  fontWeight: theme.typography.fontWeights.bold,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: theme.spacing.xs
-                }}>
-                  <span>📅</span> Weekly Plan
-                </h1>
-              </Link>
-              
-              <Link href="/" style={{
-                color: theme.colors.primary,
-                textDecoration: 'none',
-                fontSize: theme.typography.fontSizes.lg,
-                fontWeight: theme.typography.fontWeights.medium,
-                padding: `${theme.spacing.xs} ${theme.spacing.md}`,
-                borderRadius: theme.borderRadius.full,
-                background: 'rgba(102, 126, 234, 0.1)',
-                transition: 'all 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                gap: theme.spacing.xs
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(102, 126, 234, 0.2)'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(102, 126, 234, 0.1)'}
-              >
-                <span>🍽️</span> Meal Library →
-              </Link>
-            </div>
-
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: theme.spacing.lg,
-              flexWrap: 'wrap'
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: theme.spacing.sm,
-                background: '#f7fafc',
-                padding: `${theme.spacing.xs} ${theme.spacing.md}`,
-                borderRadius: theme.borderRadius.full,
-                border: `1px solid ${theme.colors.border}`
-              }}>
-                <span style={{ fontSize: theme.typography.fontSizes.lg }}>👤</span>
-                <span style={{
-                  fontSize: theme.typography.fontSizes.sm,
-                  color: theme.colors.text.secondary,
-                  maxWidth: windowWidth < 768 ? '120px' : '200px',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}>
-                  {user?.email}
-                </span>
-                {userRole === 'admin' && (
-                  <span style={{
-                    background: theme.colors.primaryGradient,
-                    color: 'white',
-                    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
-                    borderRadius: theme.borderRadius.full,
-                    fontSize: theme.typography.fontSizes.xs,
-                    fontWeight: theme.typography.fontWeights.semibold,
-                    marginLeft: theme.spacing.xs
-                  }}>
-                    Admin
-                  </span>
-                )}
-              </div>
-              
-              <button 
-                onClick={async () => {
-                  await supabase.auth.signOut()
-                  router.push('/auth/login')
-                }} 
-                style={{
-                  padding: `${theme.spacing.sm} ${theme.spacing.lg}`,
-                  fontSize: theme.typography.fontSizes.sm,
-                  background: theme.colors.danger,
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: theme.borderRadius.full,
-                  cursor: 'pointer',
-                  fontWeight: theme.typography.fontWeights.medium,
-                  boxShadow: theme.shadows.sm,
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: theme.spacing.xs
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = theme.colors.dangerDark
-                  e.currentTarget.style.transform = 'translateY(-2px)'
-                  e.currentTarget.style.boxShadow = theme.shadows.md
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = theme.colors.danger
-                  e.currentTarget.style.transform = 'translateY(0)'
-                  e.currentTarget.style.boxShadow = theme.shadows.sm
-                }}
-              >
-                <span>🚪</span> Sign Out
-              </button>
-            </div>
+              📅 Weekly Plan
+            </h1>
+            
+            <UserMenu user={user} userRole={userRole} />
           </div>
-        </div>
+        </header>
 
         {/* Main Content */}
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: theme.spacing.xl }}>
+        <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>
           {/* Week Header */}
           <div style={{
             display: 'flex',
-            flexDirection: windowWidth < 768 ? 'column' : 'row',
+            flexDirection: isMobile ? 'column' : 'row',
             justifyContent: 'space-between',
-            alignItems: windowWidth < 768 ? 'flex-start' : 'center',
-            marginBottom: theme.spacing.xl,
-            gap: theme.spacing.md
+            alignItems: isMobile ? 'flex-start' : 'center',
+            marginBottom: '32px',
+            gap: '16px'
           }}>
             <div style={{
-              background: 'white',
-              padding: theme.spacing.lg,
-              borderRadius: theme.borderRadius.lg,
-              boxShadow: theme.shadows.md,
-              border: `1px solid ${theme.colors.border}`,
+              background: stitchTheme.colors.surface,
+              padding: '24px',
+              borderRadius: '16px',
+              boxShadow: stitchTheme.shadows.md,
+              border: `1px solid ${stitchTheme.colors.outlineVariant}`,
               flex: 1
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.md }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 <div style={{
-                  background: theme.colors.primaryGradient,
+                  background: `linear-gradient(135deg, ${stitchTheme.colors.primary} 0%, ${stitchTheme.colors.primaryContainer} 100%)`,
                   width: '50px',
                   height: '50px',
-                  borderRadius: theme.borderRadius.full,
+                  borderRadius: '9999px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -410,17 +328,17 @@ export default function WeeklyPage() {
                 </div>
                 <div>
                   <div style={{
-                    fontSize: theme.typography.fontSizes.sm,
-                    color: theme.colors.text.muted,
-                    marginBottom: theme.spacing.xs
+                    fontSize: '12px',
+                    color: stitchTheme.colors.onSurfaceVariant,
+                    marginBottom: '4px'
                   }}>
                     Current Week
                   </div>
                   <h2 style={{
                     margin: 0,
-                    fontSize: windowWidth < 768 ? theme.typography.fontSizes.lg : theme.typography.fontSizes.xl,
-                    color: theme.colors.text.primary,
-                    fontWeight: theme.typography.fontWeights.semibold
+                    fontSize: isMobile ? '18px' : '24px',
+                    color: stitchTheme.colors.onSurface,
+                    fontWeight: 600
                   }}>
                     {new Date(currentWeek).toLocaleDateString('en-US', { 
                       month: 'long', 
@@ -437,32 +355,32 @@ export default function WeeklyPage() {
                 onClick={generateNewWeek}
                 disabled={generating}
                 style={{
-                  background: generating ? '#ccc' : theme.colors.primaryGradient,
+                  background: generating ? '#ccc' : `linear-gradient(135deg, ${stitchTheme.colors.primary} 0%, ${stitchTheme.colors.primaryContainer} 100%)`,
                   color: 'white',
                   border: 'none',
-                  padding: `${theme.spacing.md} ${theme.spacing.xl}`,
-                  borderRadius: theme.borderRadius.full,
+                  padding: '12px 28px',
+                  borderRadius: '9999px',
                   cursor: generating ? 'not-allowed' : 'pointer',
-                  fontWeight: theme.typography.fontWeights.semibold,
-                  fontSize: theme.typography.fontSizes.base,
-                  boxShadow: theme.shadows.md,
+                  fontWeight: 600,
+                  fontSize: '14px',
+                  boxShadow: stitchTheme.shadows.md,
                   transition: 'all 0.2s',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: theme.spacing.sm,
-                  width: windowWidth < 768 ? '100%' : 'auto',
+                  gap: '8px',
+                  width: isMobile ? '100%' : 'auto',
                   justifyContent: 'center'
                 }}
                 onMouseEnter={(e) => {
                   if (!generating) {
                     e.currentTarget.style.transform = 'translateY(-2px)'
-                    e.currentTarget.style.boxShadow = theme.shadows.hover
+                    e.currentTarget.style.boxShadow = stitchTheme.shadows.glow
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!generating) {
                     e.currentTarget.style.transform = 'translateY(0)'
-                    e.currentTarget.style.boxShadow = theme.shadows.md
+                    e.currentTarget.style.boxShadow = stitchTheme.shadows.md
                   }
                 }}
               >
@@ -476,17 +394,16 @@ export default function WeeklyPage() {
           {!weeklyPlan ? (
             <div style={{
               textAlign: 'center',
-              padding: theme.spacing.xxl,
-              background: 'white',
-              borderRadius: theme.borderRadius.lg,
-              border: `2px dashed ${theme.colors.border}`,
-              animation: theme.animations.fadeIn
+              padding: '48px',
+              background: stitchTheme.colors.surfaceContainerLow,
+              borderRadius: '24px',
+              border: `2px dashed ${stitchTheme.colors.outlineVariant}`
             }}>
-              <div style={{ fontSize: '64px', marginBottom: theme.spacing.lg }}>📅</div>
-              <h3 style={{ color: theme.colors.text.primary, marginBottom: theme.spacing.sm }}>
+              <div style={{ fontSize: '64px', marginBottom: '24px' }}>📅</div>
+              <h3 style={{ color: stitchTheme.colors.onSurface, marginBottom: '8px' }}>
                 No meal plan for this week
               </h3>
-              <p style={{ color: theme.colors.text.muted, marginBottom: theme.spacing.lg }}>
+              <p style={{ color: stitchTheme.colors.onSurfaceVariant, marginBottom: '24px' }}>
                 {userRole === 'admin' 
                   ? 'Click "Generate New Week" to create your first weekly meal plan!'
                   : 'Your admin hasn\'t generated a meal plan for this week yet.'}
@@ -496,14 +413,14 @@ export default function WeeklyPage() {
                   onClick={generateNewWeek}
                   disabled={generating}
                   style={{
-                    background: generating ? '#ccc' : theme.colors.primaryGradient,
+                    background: generating ? '#ccc' : `linear-gradient(135deg, ${stitchTheme.colors.primary} 0%, ${stitchTheme.colors.primaryContainer} 100%)`,
                     color: 'white',
                     border: 'none',
-                    padding: `${theme.spacing.md} ${theme.spacing.xl}`,
-                    borderRadius: theme.borderRadius.full,
+                    padding: '12px 28px',
+                    borderRadius: '9999px',
                     cursor: generating ? 'not-allowed' : 'pointer',
-                    fontWeight: theme.typography.fontWeights.semibold,
-                    fontSize: theme.typography.fontSizes.base
+                    fontWeight: 600,
+                    fontSize: '14px'
                   }}
                 >
                   {generating ? 'Generating...' : '✨ Generate First Week'}
@@ -513,15 +430,14 @@ export default function WeeklyPage() {
           ) : (
             <>
               {/* Mobile Swipe Indicator */}
-              {windowWidth < 768 && (
+              {isMobile && (
                 <div style={{
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  marginBottom: theme.spacing.md,
-                  padding: `0 ${theme.spacing.xs}`,
-                  color: theme.colors.text.muted,
-                  fontSize: theme.typography.fontSizes.sm
+                  marginBottom: '16px',
+                  color: stitchTheme.colors.onSurfaceVariant,
+                  fontSize: '12px'
                 }}>
                   <span>← Swipe to see more days</span>
                   <span>7 days →</span>
@@ -532,12 +448,12 @@ export default function WeeklyPage() {
               <div style={{
                 display: 'flex',
                 overflowX: 'auto',
-                gap: theme.spacing.lg,
-                padding: `${theme.spacing.xs} 0 ${theme.spacing.xl} 0`,
-                scrollSnapType: windowWidth < 768 ? 'x mandatory' : 'none',
+                gap: '20px',
+                padding: '4px 0 32px 0',
+                scrollSnapType: isMobile ? 'x mandatory' : 'none',
                 WebkitOverflowScrolling: 'touch',
                 scrollbarWidth: 'thin',
-                scrollbarColor: `${theme.colors.primary} ${theme.colors.border}`
+                scrollbarColor: `${stitchTheme.colors.primary} ${stitchTheme.colors.outlineVariant}`
               }}>
                 {days.map((day, dayIndex) => {
                   const isHovered = hoveredDay === day
@@ -547,13 +463,13 @@ export default function WeeklyPage() {
                       onMouseEnter={() => setHoveredDay(day)}
                       onMouseLeave={() => setHoveredDay(null)}
                       style={{
-                        minWidth: windowWidth < 768 ? '85%' : 'calc(14.28% - 13px)',
-                        scrollSnapAlign: windowWidth < 768 ? 'start' : 'none',
-                        background: 'white',
-                        border: `1px solid ${theme.colors.border}`,
-                        borderRadius: theme.borderRadius.lg,
+                        minWidth: isMobile ? '85%' : 'calc(14.28% - 17px)',
+                        scrollSnapAlign: isMobile ? 'start' : 'none',
+                        background: stitchTheme.colors.surface,
+                        border: `1px solid ${stitchTheme.colors.outlineVariant}`,
+                        borderRadius: '16px',
                         overflow: 'hidden',
-                        boxShadow: isHovered ? theme.shadows.hover : theme.shadows.md,
+                        boxShadow: isHovered ? stitchTheme.shadows.lg : stitchTheme.shadows.md,
                         transition: 'all 0.3s ease',
                         transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
                         animation: `slideUp 0.4s ease-out ${dayIndex * 0.05}s both`
@@ -561,17 +477,17 @@ export default function WeeklyPage() {
                     >
                       {/* Day Header */}
                       <div style={{
-                        background: theme.colors.primaryGradient,
-                        padding: theme.spacing.md,
+                        background: `linear-gradient(135deg, ${stitchTheme.colors.primary} 0%, ${stitchTheme.colors.primaryContainer} 100%)`,
+                        padding: '16px',
                         textAlign: 'center',
                         color: 'white'
                       }}>
-                        <div style={{ fontSize: '24px', marginBottom: theme.spacing.xs }}>
+                        <div style={{ fontSize: '28px', marginBottom: '4px' }}>
                           {getDayIcon(day)}
                         </div>
                         <div style={{
-                          fontWeight: theme.typography.fontWeights.bold,
-                          fontSize: theme.typography.fontSizes.lg,
+                          fontWeight: 700,
+                          fontSize: '18px',
                           textTransform: 'capitalize'
                         }}>
                           {formatDayName(day)}
@@ -579,7 +495,7 @@ export default function WeeklyPage() {
                       </div>
 
                       {/* Meals */}
-                      <div style={{ padding: theme.spacing.md }}>
+                      <div style={{ padding: '16px' }}>
                         {mealTimes.map(time => {
                           const mealId = weeklyPlan[`${day}_${time}`]
                           const meal = getMealById(mealId)
@@ -592,18 +508,15 @@ export default function WeeklyPage() {
                               onMouseLeave={() => setHoveredMeal(null)}
                               onClick={() => meal && handleMealClick(meal)}
                               style={{
-                                marginBottom: theme.spacing.md,
-                                padding: theme.spacing.sm,
-                                background: time === 'breakfast' ? '#fff4e6' :
-                                           time === 'lunch' ? '#e6f3ff' : '#f0e6ff',
-                                borderRadius: theme.borderRadius.md,
+                                marginBottom: '16px',
+                                padding: '12px',
+                                background: getMealTimeBg(time),
+                                borderRadius: '12px',
                                 cursor: meal ? 'pointer' : 'default',
                                 transition: 'all 0.2s',
                                 opacity: meal ? 1 : 0.5,
                                 transform: isMealHovered && meal ? 'scale(1.02)' : 'scale(1)',
-                                border: isMealHovered && meal ? `2px solid ${theme.colors.primary}` : '2px solid transparent',
-                                position: 'relative',
-                                overflow: 'hidden'
+                                border: isMealHovered && meal ? `2px solid ${stitchTheme.colors.primary}` : '2px solid transparent'
                               }}
                             >
                               {/* Time Badge */}
@@ -611,25 +524,23 @@ export default function WeeklyPage() {
                                 display: 'flex',
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
-                                marginBottom: theme.spacing.xs
+                                marginBottom: '8px'
                               }}>
                                 <span style={{
-                                  fontSize: theme.typography.fontSizes.xs,
-                                  fontWeight: theme.typography.fontWeights.bold,
+                                  fontSize: '10px',
+                                  fontWeight: 600,
                                   textTransform: 'uppercase',
-                                  color: time === 'breakfast' ? '#b45f06' :
-                                         time === 'lunch' ? '#0b5e8a' : '#6b21a5',
+                                  color: stitchTheme.colors.primary,
                                   background: 'rgba(255,255,255,0.5)',
-                                  padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
-                                  borderRadius: theme.borderRadius.sm
+                                  padding: '2px 8px',
+                                  borderRadius: '9999px'
                                 }}>
-                                  {time === 'breakfast' ? '🍳 Breakfast' :
-                                   time === 'lunch' ? '🥘 Lunch' : '🍲 Dinner'}
+                                  {getMealTimeIcon(time)} {time}
                                 </span>
                                 {meal && (
                                   <span style={{
-                                    fontSize: theme.typography.fontSizes.xs,
-                                    color: theme.colors.text.muted
+                                    fontSize: '10px',
+                                    color: stitchTheme.colors.onSurfaceVariant
                                   }}>
                                     🔥 {meal.calories} kcal
                                   </span>
@@ -644,19 +555,19 @@ export default function WeeklyPage() {
                                     alt={meal.name}
                                     style={{
                                       width: '100%',
-                                      height: windowWidth < 768 ? '80px' : '60px',
+                                      height: isMobile ? '80px' : '70px',
                                       objectFit: 'cover',
-                                      borderRadius: theme.borderRadius.sm,
-                                      marginBottom: theme.spacing.xs
+                                      borderRadius: '8px',
+                                      marginBottom: '8px'
                                     }}
                                   />
                                   
                                   {/* Meal Name */}
                                   <div style={{
-                                    fontWeight: theme.typography.fontWeights.semibold,
-                                    fontSize: windowWidth < 768 ? theme.typography.fontSizes.sm : theme.typography.fontSizes.xs,
-                                    color: theme.colors.text.primary,
-                                    marginBottom: theme.spacing.xs,
+                                    fontWeight: 600,
+                                    fontSize: isMobile ? '13px' : '12px',
+                                    color: stitchTheme.colors.onSurface,
+                                    marginBottom: '4px',
                                     display: '-webkit-box',
                                     WebkitLineClamp: 2,
                                     WebkitBoxOrient: 'vertical',
@@ -667,8 +578,8 @@ export default function WeeklyPage() {
 
                                   {/* Portion Preview */}
                                   <div style={{
-                                    fontSize: theme.typography.fontSizes.xs,
-                                    color: theme.colors.text.muted,
+                                    fontSize: '10px',
+                                    color: stitchTheme.colors.onSurfaceVariant,
                                     display: '-webkit-box',
                                     WebkitLineClamp: 1,
                                     WebkitBoxOrient: 'vertical',
@@ -679,25 +590,25 @@ export default function WeeklyPage() {
 
                                   {/* Tap indicator */}
                                   <div style={{
-                                    marginTop: theme.spacing.xs,
-                                    fontSize: theme.typography.fontSizes.xs,
-                                    color: theme.colors.primary,
+                                    marginTop: '8px',
+                                    fontSize: '10px',
+                                    color: stitchTheme.colors.primary,
                                     textAlign: 'right',
-                                    opacity: isMealHovered ? 1 : 0.7
+                                    opacity: isMealHovered ? 1 : 0.6
                                   }}>
                                     Tap for details →
                                   </div>
                                 </>
                               ) : (
                                 <div style={{
-                                  height: windowWidth < 768 ? '100px' : '80px',
+                                  height: isMobile ? '100px' : '90px',
                                   display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
                                   background: 'rgba(255,255,255,0.5)',
-                                  borderRadius: theme.borderRadius.sm,
-                                  color: theme.colors.text.muted,
-                                  fontSize: theme.typography.fontSizes.sm
+                                  borderRadius: '8px',
+                                  color: stitchTheme.colors.onSurfaceVariant,
+                                  fontSize: '12px'
                                 }}>
                                   No meal assigned
                                 </div>
@@ -716,77 +627,138 @@ export default function WeeklyPage() {
           {/* Weekly Summary */}
           {weeklyPlan && (
             <div style={{
-              marginTop: theme.spacing.xl,
-              background: 'white',
-              borderRadius: theme.borderRadius.lg,
-              padding: theme.spacing.lg,
-              border: `1px solid ${theme.colors.border}`,
-              boxShadow: theme.shadows.sm
+              marginTop: '32px',
+              background: stitchTheme.colors.surface,
+              borderRadius: '16px',
+              padding: '24px',
+              border: `1px solid ${stitchTheme.colors.outlineVariant}`,
+              boxShadow: stitchTheme.shadows.sm
             }}>
               <h3 style={{
-                margin: `0 0 ${theme.spacing.md} 0`,
-                fontSize: theme.typography.fontSizes.lg,
-                color: theme.colors.text.primary,
+                margin: `0 0 16px 0`,
+                fontSize: '18px',
+                color: stitchTheme.colors.onSurface,
                 display: 'flex',
                 alignItems: 'center',
-                gap: theme.spacing.sm
+                gap: '8px'
               }}>
                 <span>📊</span> Week Summary
               </h3>
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: windowWidth < 768 ? '1fr' : 'repeat(3, 1fr)',
-                gap: theme.spacing.md
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+                gap: '16px'
               }}>
                 <div style={{
-                  background: '#fff4e6',
-                  padding: theme.spacing.md,
-                  borderRadius: theme.borderRadius.md
+                  background: `${stitchTheme.colors.secondary}10`,
+                  padding: '16px',
+                  borderRadius: '12px'
                 }}>
-                  <div style={{ fontSize: theme.typography.fontSizes.sm, color: '#b45f06', marginBottom: theme.spacing.xs }}>
+                  <div style={{ fontSize: '12px', color: stitchTheme.colors.secondary, marginBottom: '4px' }}>
                     🍳 Breakfast
                   </div>
-                  <div style={{ fontSize: theme.typography.fontSizes.xl, fontWeight: theme.typography.fontWeights.bold, color: '#b45f06' }}>
+                  <div style={{ fontSize: '28px', fontWeight: 700, color: stitchTheme.colors.secondary }}>
                     {days.filter(day => weeklyPlan[`${day}_breakfast`]).length}/7
                   </div>
-                  <div style={{ fontSize: theme.typography.fontSizes.xs, color: '#b45f06' }}>
+                  <div style={{ fontSize: '11px', color: stitchTheme.colors.secondary }}>
                     meals planned
                   </div>
                 </div>
                 <div style={{
-                  background: '#e6f3ff',
-                  padding: theme.spacing.md,
-                  borderRadius: theme.borderRadius.md
+                  background: `${stitchTheme.colors.tertiary}10`,
+                  padding: '16px',
+                  borderRadius: '12px'
                 }}>
-                  <div style={{ fontSize: theme.typography.fontSizes.sm, color: '#0b5e8a', marginBottom: theme.spacing.xs }}>
+                  <div style={{ fontSize: '12px', color: stitchTheme.colors.tertiary, marginBottom: '4px' }}>
                     🥘 Lunch
                   </div>
-                  <div style={{ fontSize: theme.typography.fontSizes.xl, fontWeight: theme.typography.fontWeights.bold, color: '#0b5e8a' }}>
+                  <div style={{ fontSize: '28px', fontWeight: 700, color: stitchTheme.colors.tertiary }}>
                     {days.filter(day => weeklyPlan[`${day}_lunch`]).length}/7
                   </div>
-                  <div style={{ fontSize: theme.typography.fontSizes.xs, color: '#0b5e8a' }}>
+                  <div style={{ fontSize: '11px', color: stitchTheme.colors.tertiary }}>
                     meals planned
                   </div>
                 </div>
                 <div style={{
-                  background: '#f0e6ff',
-                  padding: theme.spacing.md,
-                  borderRadius: theme.borderRadius.md
+                  background: `${stitchTheme.colors.primary}10`,
+                  padding: '16px',
+                  borderRadius: '12px'
                 }}>
-                  <div style={{ fontSize: theme.typography.fontSizes.sm, color: '#6b21a5', marginBottom: theme.spacing.xs }}>
+                  <div style={{ fontSize: '12px', color: stitchTheme.colors.primary, marginBottom: '4px' }}>
                     🍲 Dinner
                   </div>
-                  <div style={{ fontSize: theme.typography.fontSizes.xl, fontWeight: theme.typography.fontWeights.bold, color: '#6b21a5' }}>
+                  <div style={{ fontSize: '28px', fontWeight: 700, color: stitchTheme.colors.primary }}>
                     {days.filter(day => weeklyPlan[`${day}_dinner`]).length}/7
                   </div>
-                  <div style={{ fontSize: theme.typography.fontSizes.xs, color: '#6b21a5' }}>
+                  <div style={{ fontSize: '11px', color: stitchTheme.colors.primary }}>
                     meals planned
                   </div>
                 </div>
               </div>
             </div>
           )}
-        </div>
+        </main>
+
+        {/* Bottom Navigation */}
+        <nav style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          background: `${stitchTheme.colors.surface}/0.8`,
+          backdropFilter: 'blur(12px)',
+          borderTop: `1px solid ${stitchTheme.colors.outlineVariant}`,
+          padding: '12px 24px',
+          borderRadius: '24px 24px 0 0'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-around',
+            alignItems: 'center',
+            maxWidth: '400px',
+            margin: '0 auto'
+          }}>
+            <Link href="/" style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '4px',
+              textDecoration: 'none',
+              color: stitchTheme.colors.onSurfaceVariant,
+              padding: '8px 16px',
+              borderRadius: '12px'
+            }}>
+              <span>🍽️</span>
+              <span style={{ fontSize: '11px' }}>Library</span>
+            </Link>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '4px',
+              background: `${stitchTheme.colors.primary}10`,
+              color: stitchTheme.colors.primary,
+              padding: '8px 16px',
+              borderRadius: '16px'
+            }}>
+              <span>📅</span>
+              <span style={{ fontSize: '11px', fontWeight: 600 }}>Planner</span>
+            </div>
+            <Link href="/shopping" style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '4px',
+              textDecoration: 'none',
+              color: stitchTheme.colors.onSurfaceVariant,
+              padding: '8px 16px',
+              borderRadius: '12px'
+            }}>
+              <span>🛒</span>
+              <span style={{ fontSize: '11px' }}>List</span>
+            </Link>
+          </div>
+        </nav>
 
         {/* Meal Detail Modal */}
         {isMealModalOpen && selectedMeal && (
@@ -801,18 +773,18 @@ export default function WeeklyPage() {
             justifyContent: 'center',
             alignItems: 'center',
             zIndex: 2000,
-            padding: theme.spacing.lg,
-            animation: theme.animations.fadeIn
+            padding: '20px',
+            animation: 'fadeIn 0.2s ease-out'
           }} onClick={() => setIsMealModalOpen(false)}>
             <div style={{
               backgroundColor: 'white',
-              borderRadius: theme.borderRadius.xl,
+              borderRadius: '24px',
               maxWidth: '500px',
               width: '100%',
               maxHeight: '90vh',
               overflowY: 'auto',
               position: 'relative',
-              boxShadow: theme.shadows.xl
+              boxShadow: stitchTheme.shadows.xl
             }} onClick={(e) => e.stopPropagation()}>
               
               {/* Close button */}
@@ -820,31 +792,28 @@ export default function WeeklyPage() {
                 onClick={() => setIsMealModalOpen(false)}
                 style={{
                   position: 'absolute',
-                  top: theme.spacing.md,
-                  right: theme.spacing.md,
+                  top: '12px',
+                  right: '12px',
                   background: 'white',
                   border: 'none',
-                  fontSize: '24px',
+                  fontSize: '20px',
                   cursor: 'pointer',
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: theme.borderRadius.full,
-                  boxShadow: theme.shadows.md,
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '9999px',
+                  boxShadow: stitchTheme.shadows.md,
                   zIndex: 1,
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s'
+                  justifyContent: 'center'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = theme.colors.danger
+                  e.currentTarget.style.background = stitchTheme.colors.error
                   e.currentTarget.style.color = 'white'
-                  e.currentTarget.style.transform = 'scale(1.1)'
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = 'white'
-                  e.currentTarget.style.color = theme.colors.text.primary
-                  e.currentTarget.style.transform = 'scale(1)'
+                  e.currentTarget.style.color = stitchTheme.colors.onSurface
                 }}
               >
                 ✕
@@ -856,20 +825,20 @@ export default function WeeklyPage() {
                 alt={selectedMeal.name}
                 style={{ 
                   width: '100%', 
-                  height: windowWidth < 768 ? '200px' : '250px', 
+                  height: isMobile ? '200px' : '250px', 
                   objectFit: 'cover',
-                  borderTopLeftRadius: theme.borderRadius.xl,
-                  borderTopRightRadius: theme.borderRadius.xl
+                  borderTopLeftRadius: '24px',
+                  borderTopRightRadius: '24px'
                 }}
               />
 
               {/* Meal Details */}
-              <div style={{ padding: theme.spacing.xl }}>
+              <div style={{ padding: '24px' }}>
                 <h2 style={{
-                  margin: `0 0 ${theme.spacing.xs} 0`,
-                  fontSize: windowWidth < 768 ? theme.typography.fontSizes.xl : theme.typography.fontSizes.xxl,
-                  color: theme.colors.text.primary,
-                  fontWeight: theme.typography.fontWeights.bold
+                  margin: `0 0 8px 0`,
+                  fontSize: isMobile ? '22px' : '28px',
+                  color: stitchTheme.colors.onSurface,
+                  fontWeight: 700
                 }}>
                   {selectedMeal.name}
                 </h2>
@@ -877,17 +846,17 @@ export default function WeeklyPage() {
                 {/* Tags */}
                 <div style={{
                   display: 'flex',
-                  gap: theme.spacing.sm,
-                  marginBottom: theme.spacing.lg,
+                  gap: '8px',
+                  marginBottom: '24px',
                   flexWrap: 'wrap'
                 }}>
                   <span style={{
-                    background: theme.colors.primaryGradient,
+                    background: `linear-gradient(135deg, ${stitchTheme.colors.primary} 0%, ${stitchTheme.colors.primaryContainer} 100%)`,
                     color: 'white',
-                    padding: `${theme.spacing.xs} ${theme.spacing.md}`,
-                    borderRadius: theme.borderRadius.full,
-                    fontSize: theme.typography.fontSizes.sm,
-                    fontWeight: theme.typography.fontWeights.medium,
+                    padding: '4px 12px',
+                    borderRadius: '9999px',
+                    fontSize: '12px',
+                    fontWeight: 500,
                     display: 'flex',
                     alignItems: 'center',
                     gap: '4px'
@@ -895,12 +864,12 @@ export default function WeeklyPage() {
                     {selectedMeal.category === 'breakfast' ? '🍳' : selectedMeal.category === 'lunch' ? '🥘' : '🍲'} {selectedMeal.category}
                   </span>
                   <span style={{
-                    background: 'rgba(72, 187, 120, 0.1)',
-                    color: theme.colors.secondaryDark,
-                    padding: `${theme.spacing.xs} ${theme.spacing.md}`,
-                    borderRadius: theme.borderRadius.full,
-                    fontSize: theme.typography.fontSizes.sm,
-                    fontWeight: theme.typography.fontWeights.medium,
+                    background: `${stitchTheme.colors.secondary}10`,
+                    color: stitchTheme.colors.secondary,
+                    padding: '4px 12px',
+                    borderRadius: '9999px',
+                    fontSize: '12px',
+                    fontWeight: 500,
                     display: 'flex',
                     alignItems: 'center',
                     gap: '4px'
@@ -909,12 +878,12 @@ export default function WeeklyPage() {
                   </span>
                   {selectedMeal.prep_time && (
                     <span style={{
-                      background: 'rgba(237, 137, 54, 0.1)',
-                      color: '#dd6b20',
-                      padding: `${theme.spacing.xs} ${theme.spacing.md}`,
-                      borderRadius: theme.borderRadius.full,
-                      fontSize: theme.typography.fontSizes.sm,
-                      fontWeight: theme.typography.fontWeights.medium,
+                      background: `${stitchTheme.colors.tertiary}10`,
+                      color: stitchTheme.colors.tertiary,
+                      padding: '4px 12px',
+                      borderRadius: '9999px',
+                      fontSize: '12px',
+                      fontWeight: 500,
                       display: 'flex',
                       alignItems: 'center',
                       gap: '4px'
@@ -925,25 +894,25 @@ export default function WeeklyPage() {
                 </div>
 
                 {/* Portion */}
-                <div style={{ marginBottom: theme.spacing.lg }}>
+                <div style={{ marginBottom: '24px' }}>
                   <h3 style={{
-                    fontSize: theme.typography.fontSizes.lg,
-                    margin: `0 0 ${theme.spacing.sm} 0`,
-                    color: theme.colors.text.secondary,
+                    fontSize: '16px',
+                    margin: `0 0 8px 0`,
+                    color: stitchTheme.colors.onSurfaceVariant,
                     display: 'flex',
                     alignItems: 'center',
-                    gap: theme.spacing.sm
+                    gap: '8px'
                   }}>
-                    <span style={{ fontSize: '24px' }}>🍽️</span> Portion Advice
+                    <span style={{ fontSize: '20px' }}>🍽️</span> Portion Advice
                   </h3>
                   <p style={{
                     margin: 0,
-                    fontSize: theme.typography.fontSizes.base,
-                    color: theme.colors.text.primary,
-                    lineHeight: 1.6,
-                    background: '#f7fafc',
-                    padding: theme.spacing.md,
-                    borderRadius: theme.borderRadius.md
+                    fontSize: '14px',
+                    color: stitchTheme.colors.onSurface,
+                    lineHeight: 1.5,
+                    background: stitchTheme.colors.surfaceContainerLow,
+                    padding: '16px',
+                    borderRadius: '12px'
                   }}>
                     {selectedMeal.portion}
                   </p>
@@ -952,37 +921,37 @@ export default function WeeklyPage() {
                 {/* Ingredients */}
                 <div>
                   <h3 style={{
-                    fontSize: theme.typography.fontSizes.lg,
-                    margin: `0 0 ${theme.spacing.sm} 0`,
-                    color: theme.colors.text.secondary,
+                    fontSize: '16px',
+                    margin: `0 0 8px 0`,
+                    color: stitchTheme.colors.onSurfaceVariant,
                     display: 'flex',
                     alignItems: 'center',
-                    gap: theme.spacing.sm
+                    gap: '8px'
                   }}>
-                    <span style={{ fontSize: '24px' }}>🧺</span> Ingredients
+                    <span style={{ fontSize: '20px' }}>🧺</span> Ingredients
                   </h3>
                   <div style={{
-                    background: '#f7fafc',
-                    borderRadius: theme.borderRadius.md,
-                    padding: theme.spacing.md
+                    background: stitchTheme.colors.surfaceContainerLow,
+                    borderRadius: '12px',
+                    padding: '16px'
                   }}>
                     {selectedMeal.ingredients?.map((item, index) => (
                       <div key={index} style={{
                         display: 'flex',
                         justifyContent: 'space-between',
-                        padding: theme.spacing.sm,
-                        borderBottom: index < selectedMeal.ingredients.length - 1 ? `1px solid ${theme.colors.border}` : 'none'
+                        padding: '8px',
+                        borderBottom: index < selectedMeal.ingredients.length - 1 ? `1px solid ${stitchTheme.colors.outlineVariant}` : 'none'
                       }}>
                         <span style={{
-                          fontWeight: theme.typography.fontWeights.medium,
-                          color: theme.colors.text.primary
+                          fontWeight: 500,
+                          color: stitchTheme.colors.onSurface
                         }}>{item.name}</span>
                         <span style={{
-                          color: theme.colors.primary,
-                          fontWeight: theme.typography.fontWeights.semibold,
-                          background: 'rgba(102, 126, 234, 0.1)',
-                          padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
-                          borderRadius: theme.borderRadius.sm
+                          color: stitchTheme.colors.primary,
+                          fontWeight: 600,
+                          background: `${stitchTheme.colors.primary}10`,
+                          padding: '2px 8px',
+                          borderRadius: '9999px'
                         }}>{item.quantity}</span>
                       </div>
                     ))}
@@ -994,25 +963,25 @@ export default function WeeklyPage() {
                   onClick={() => setIsMealModalOpen(false)}
                   style={{
                     width: '100%',
-                    padding: theme.spacing.md,
-                    marginTop: theme.spacing.xl,
-                    background: theme.colors.primaryGradient,
+                    padding: '14px',
+                    marginTop: '24px',
+                    background: `linear-gradient(135deg, ${stitchTheme.colors.primary} 0%, ${stitchTheme.colors.primaryContainer} 100%)`,
                     color: 'white',
                     border: 'none',
-                    borderRadius: theme.borderRadius.full,
-                    fontSize: theme.typography.fontSizes.base,
-                    fontWeight: theme.typography.fontWeights.semibold,
+                    borderRadius: '9999px',
+                    fontSize: '14px',
+                    fontWeight: 600,
                     cursor: 'pointer',
                     transition: 'all 0.2s',
-                    boxShadow: theme.shadows.md
+                    boxShadow: stitchTheme.shadows.md
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-2px)'
-                    e.currentTarget.style.boxShadow = theme.shadows.hover
+                    e.currentTarget.style.boxShadow = stitchTheme.shadows.glow
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)'
-                    e.currentTarget.style.boxShadow = theme.shadows.md
+                    e.currentTarget.style.boxShadow = stitchTheme.shadows.md
                   }}
                 >
                   Close

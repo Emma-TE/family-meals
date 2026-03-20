@@ -3,12 +3,11 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Image from "next/image";
-import styles from "./page.module.css";
 import { supabase } from '../lib/supabase'
 import AddMealModal from './components/AddMealModal'
 import EditMealModal from './components/EditMealModal'
-import { theme, globalStyles } from './styles/globalStyles'
+import { stitchTheme, globalStyles } from './styles/stitchTheme'
+import UserMenu from './components/UserMenu'
 
 export default function Home() {
   const router = useRouter()
@@ -128,38 +127,53 @@ export default function Home() {
     ))
   }
 
+  const getCategoryIcon = (category) => {
+    switch(category) {
+      case 'breakfast': return '🍳'
+      case 'lunch': return '🥘'
+      case 'dinner': return '🍲'
+      default: return '🍽️'
+    }
+  }
+
+  const isMobile = windowWidth < 768
+
   if (loading || !authChecked) {
     return (
       <div style={{ 
         minHeight: '100vh',
-        background: theme.colors.primaryGradient,
+        background: stitchTheme.colors.primaryGradient || `linear-gradient(135deg, ${stitchTheme.colors.primary} 0%, ${stitchTheme.colors.primaryContainer} 100%)`,
         display: 'flex',
         justifyContent: 'center', 
         alignItems: 'center',
         flexDirection: 'column',
-        gap: theme.spacing.xl
+        gap: '24px'
       }}>
         <div style={{ 
           fontSize: '64px',
-          animation: theme.animations.bounce
+          animation: 'bounce 2s infinite'
         }}>🍽️</div>
         <div style={{ 
-          fontSize: theme.typography.fontSizes.xl,
+          fontSize: '18px',
           color: 'white',
-          fontWeight: theme.typography.fontWeights.medium
+          fontWeight: 500
         }}>Loading meal planner...</div>
         <div style={{ 
           width: '50px', 
           height: '50px', 
           border: '3px solid rgba(255,255,255,0.3)',
           borderTop: `3px solid white`,
-          borderRadius: theme.borderRadius.full,
+          borderRadius: '9999px',
           animation: 'spin 1s linear infinite'
         }} />
         <style>{`
           @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+          }
+          @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
           }
           ${globalStyles}
         `}</style>
@@ -187,170 +201,66 @@ export default function Home() {
       <style>{globalStyles}</style>
       <div style={{
         minHeight: '100vh',
-        background: theme.colors.background,
-        animation: theme.animations.fadeIn
+        background: stitchTheme.colors.background,
+        animation: 'fadeIn 0.3s ease-out'
       }}>
         {/* Header */}
-        <div style={{
-          background: 'white',
-          borderBottom: `1px solid ${theme.colors.border}`,
-          boxShadow: theme.shadows.sm,
+        {/* Header - Clean Version */}
+        <header style={{
           position: 'sticky',
           top: 0,
-          zIndex: 100,
-          backdropFilter: 'blur(10px)',
-          background: 'rgba(255,255,255,0.9)'
+          zIndex: 50,
+          background: `${stitchTheme.colors.surface}/0.8`,
+          backdropFilter: 'blur(12px)',
+          borderBottom: `1px solid ${stitchTheme.colors.outlineVariant}`,
+          padding: '16px 24px'
         }}>
           <div style={{
             maxWidth: '1200px',
             margin: '0 auto',
-            padding: theme.spacing.md,
             display: 'flex',
-            flexDirection: windowWidth < 768 ? 'column' : 'row',
             justifyContent: 'space-between',
-            alignItems: windowWidth < 768 ? 'stretch' : 'center',
-            gap: theme.spacing.md
+            alignItems: 'center'
           }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: theme.spacing.lg,
-              flexWrap: 'wrap'
+            <h1 style={{
+              margin: 0,
+              fontSize: isMobile ? '22px' : '28px',
+              background: `linear-gradient(135deg, ${stitchTheme.colors.primary} 0%, ${stitchTheme.colors.primaryContainer} 100%)`,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontWeight: 800
             }}>
-              <Link href="/" style={{ textDecoration: 'none' }}>
-                <h1 style={{
-                  margin: 0,
-                  fontSize: windowWidth < 768 ? theme.typography.fontSizes.xl : theme.typography.fontSizes.xxl,
-                  background: theme.colors.primaryGradient,
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  fontWeight: theme.typography.fontWeights.bold
-                }}>
-                  🍽️ Meal Planner
-                </h1>
-              </Link>
-              
-              <Link href="/weekly" style={{
-                color: theme.colors.primary,
-                textDecoration: 'none',
-                fontSize: theme.typography.fontSizes.lg,
-                fontWeight: theme.typography.fontWeights.medium,
-                padding: `${theme.spacing.xs} ${theme.spacing.md}`,
-                borderRadius: theme.borderRadius.full,
-                background: 'rgba(102, 126, 234, 0.1)',
-                transition: 'all 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                gap: theme.spacing.xs
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(102, 126, 234, 0.2)'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(102, 126, 234, 0.1)'}
-              >
-                <span>📅</span> Weekly Plan →
-              </Link>
-            </div>
-
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: theme.spacing.lg,
-              flexWrap: 'wrap'
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: theme.spacing.sm,
-                background: '#f7fafc',
-                padding: `${theme.spacing.xs} ${theme.spacing.md}`,
-                borderRadius: theme.borderRadius.full,
-                border: `1px solid ${theme.colors.border}`
-              }}>
-                <span style={{ fontSize: theme.typography.fontSizes.lg }}>👤</span>
-                <span style={{
-                  fontSize: theme.typography.fontSizes.sm,
-                  color: theme.colors.text.secondary,
-                  maxWidth: windowWidth < 768 ? '120px' : '200px',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}>
-                  {user?.email}
-                </span>
-                {userRole === 'admin' && (
-                  <span style={{
-                    background: theme.colors.primaryGradient,
-                    color: 'white',
-                    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
-                    borderRadius: theme.borderRadius.full,
-                    fontSize: theme.typography.fontSizes.xs,
-                    fontWeight: theme.typography.fontWeights.semibold,
-                    marginLeft: theme.spacing.xs
-                  }}>
-                    Admin
-                  </span>
-                )}
-              </div>
-              
-              <button 
-                onClick={async () => {
-                  await supabase.auth.signOut()
-                  router.push('/auth/login')
-                }} 
-                style={{
-                  padding: `${theme.spacing.sm} ${theme.spacing.lg}`,
-                  fontSize: theme.typography.fontSizes.sm,
-                  background: theme.colors.danger,
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: theme.borderRadius.full,
-                  cursor: 'pointer',
-                  fontWeight: theme.typography.fontWeights.medium,
-                  boxShadow: theme.shadows.sm,
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: theme.spacing.xs
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = theme.colors.dangerDark
-                  e.currentTarget.style.transform = 'translateY(-2px)'
-                  e.currentTarget.style.boxShadow = theme.shadows.md
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = theme.colors.danger
-                  e.currentTarget.style.transform = 'translateY(0)'
-                  e.currentTarget.style.boxShadow = theme.shadows.sm
-                }}
-              >
-                <span>🚪</span> Sign Out
-              </button>
-            </div>
+              🍽️ Meal Library
+            </h1>
+            
+            <UserMenu user={user} userRole={userRole} />
           </div>
-        </div>
+        </header>
 
         {/* Main Content */}
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: theme.spacing.xl }}>
+        <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>
           {/* Header with Add Button */}
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: theme.spacing.xl,
+            marginBottom: '32px',
             flexWrap: 'wrap',
-            gap: theme.spacing.md
+            gap: '16px'
           }}>
             <div>
               <h2 style={{
-                fontSize: windowWidth < 768 ? theme.typography.fontSizes.xl : theme.typography.fontSizes.xxl,
-                color: theme.colors.text.primary,
-                margin: `0 0 ${theme.spacing.xs} 0`,
-                fontWeight: theme.typography.fontWeights.bold
+                fontSize: isMobile ? '24px' : '32px',
+                color: stitchTheme.colors.onSurface,
+                margin: 0,
+                fontWeight: 800
               }}>
                 Our Meal Library
               </h2>
               <p style={{
-                color: theme.colors.text.muted,
-                margin: 0,
-                fontSize: theme.typography.fontSizes.base
+                color: stitchTheme.colors.onSurfaceVariant,
+                margin: '4px 0 0',
+                fontSize: '14px'
               }}>
                 {meals.length} delicious meals to choose from
               </p>
@@ -360,27 +270,26 @@ export default function Home() {
               <button 
                 onClick={() => setIsAddModalOpen(true)}
                 style={{
-                  background: theme.colors.primaryGradient,
-                  color: 'white',
+                  background: `linear-gradient(135deg, ${stitchTheme.colors.primary} 0%, ${stitchTheme.colors.primaryContainer} 100%)`,
+                  color: stitchTheme.colors.onPrimary,
                   border: 'none',
-                  padding: `${theme.spacing.md} ${theme.spacing.xl}`,
-                  borderRadius: theme.borderRadius.full,
+                  padding: '12px 24px',
+                  borderRadius: '9999px',
                   cursor: 'pointer',
-                  fontWeight: theme.typography.fontWeights.semibold,
-                  fontSize: theme.typography.fontSizes.base,
-                  boxShadow: theme.shadows.md,
-                  transition: 'all 0.2s',
+                  fontWeight: 600,
+                  fontSize: '14px',
+                  boxShadow: stitchTheme.shadows.md,
                   display: 'flex',
                   alignItems: 'center',
-                  gap: theme.spacing.sm
+                  gap: '8px'
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-2px)'
-                  e.currentTarget.style.boxShadow = theme.shadows.hover
+                  e.currentTarget.style.boxShadow = stitchTheme.shadows.glow
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'translateY(0)'
-                  e.currentTarget.style.boxShadow = theme.shadows.md
+                  e.currentTarget.style.boxShadow = stitchTheme.shadows.md
                 }}
               >
                 <span>➕</span> Add New Meal
@@ -391,37 +300,35 @@ export default function Home() {
           {/* Category Filter */}
           <div style={{
             display: 'flex',
-            gap: theme.spacing.sm,
-            marginBottom: theme.spacing.xl,
+            gap: '8px',
+            marginBottom: '32px',
             flexWrap: 'wrap',
-            background: 'white',
-            padding: theme.spacing.md,
-            borderRadius: theme.borderRadius.lg,
-            boxShadow: theme.shadows.sm,
-            border: `1px solid ${theme.colors.border}`
+            background: stitchTheme.colors.surfaceContainerLow,
+            padding: '16px',
+            borderRadius: '16px'
           }}>
             {categories.map(cat => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
                 style={{
-                  background: selectedCategory === cat.id ? theme.colors.primaryGradient : 'transparent',
-                  color: selectedCategory === cat.id ? 'white' : theme.colors.text.secondary,
+                  background: selectedCategory === cat.id ? `linear-gradient(135deg, ${stitchTheme.colors.primary} 0%, ${stitchTheme.colors.primaryContainer} 100%)` : 'transparent',
+                  color: selectedCategory === cat.id ? stitchTheme.colors.onPrimary : stitchTheme.colors.onSurfaceVariant,
                   border: 'none',
-                  padding: `${theme.spacing.sm} ${theme.spacing.lg}`,
-                  borderRadius: theme.borderRadius.full,
+                  padding: '8px 20px',
+                  borderRadius: '9999px',
                   cursor: 'pointer',
-                  fontWeight: theme.typography.fontWeights.medium,
-                  fontSize: theme.typography.fontSizes.base,
+                  fontWeight: 500,
+                  fontSize: '14px',
                   transition: 'all 0.2s',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: theme.spacing.xs,
-                  flex: windowWidth < 768 ? 1 : 'none'
+                  gap: '8px',
+                  flex: isMobile ? 1 : 'none'
                 }}
                 onMouseEnter={(e) => {
                   if (selectedCategory !== cat.id) {
-                    e.currentTarget.style.background = 'rgba(102, 126, 234, 0.1)'
+                    e.currentTarget.style.background = `${stitchTheme.colors.primary}10`
                   }
                 }}
                 onMouseLeave={(e) => {
@@ -439,31 +346,29 @@ export default function Home() {
           {meals.length === 0 ? (
             <div style={{
               textAlign: 'center',
-              padding: theme.spacing.xxl,
-              background: 'white',
-              borderRadius: theme.borderRadius.lg,
-              border: `2px dashed ${theme.colors.border}`,
-              animation: theme.animations.fadeIn
+              padding: '48px',
+              background: stitchTheme.colors.surfaceContainerLow,
+              borderRadius: '24px',
+              border: `2px dashed ${stitchTheme.colors.outlineVariant}`
             }}>
-              <div style={{ fontSize: '64px', marginBottom: theme.spacing.lg }}>🍽️</div>
-              <h3 style={{ color: theme.colors.text.primary, marginBottom: theme.spacing.sm }}>
+              <div style={{ fontSize: '64px', marginBottom: '24px' }}>🍽️</div>
+              <h3 style={{ color: stitchTheme.colors.onSurface, marginBottom: '8px' }}>
                 No meals yet
               </h3>
-              <p style={{ color: theme.colors.text.muted, marginBottom: theme.spacing.lg }}>
+              <p style={{ color: stitchTheme.colors.onSurfaceVariant, marginBottom: '24px' }}>
                 Click "Add New Meal" to get started with your meal library!
               </p>
               {userRole === 'admin' && (
                 <button
                   onClick={() => setIsAddModalOpen(true)}
                   style={{
-                    background: theme.colors.primaryGradient,
-                    color: 'white',
+                    background: `linear-gradient(135deg, ${stitchTheme.colors.primary} 0%, ${stitchTheme.colors.primaryContainer} 100%)`,
+                    color: stitchTheme.colors.onPrimary,
                     border: 'none',
-                    padding: `${theme.spacing.md} ${theme.spacing.xl}`,
-                    borderRadius: theme.borderRadius.full,
+                    padding: '12px 24px',
+                    borderRadius: '9999px',
                     cursor: 'pointer',
-                    fontWeight: theme.typography.fontWeights.semibold,
-                    fontSize: theme.typography.fontSizes.base
+                    fontWeight: 600
                   }}
                 >
                   ✨ Add Your First Meal
@@ -473,66 +378,75 @@ export default function Home() {
           ) : (
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-              gap: theme.spacing.lg,
-              animation: theme.animations.fadeIn
+              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+              gap: '24px',
+              animation: 'fadeIn 0.3s ease-out'
             }}>
               {filteredMeals.map((meal, index) => (
                 <div
                   key={meal.id}
                   style={{
-                    animation: `slideUp 0.4s ease-out ${index * 0.05}s both`,
+                    animation: `slideUp 0.4s ease-out ${index * 0.03}s both`,
                     transform: hoveredMeal === meal.id ? 'translateY(-8px)' : 'translateY(0)'
                   }}
                 >
                   <div style={{
-                    border: `1px solid ${theme.colors.border}`,
-                    borderRadius: theme.borderRadius.lg,
+                    background: stitchTheme.colors.surface,
+                    borderRadius: '16px',
                     overflow: 'hidden',
-                    background: theme.colors.cardBg,
-                    boxShadow: hoveredMeal === meal.id ? theme.shadows.hover : theme.shadows.md,
+                    boxShadow: hoveredMeal === meal.id ? stitchTheme.shadows.lg : stitchTheme.shadows.md,
                     transition: 'all 0.3s ease',
                     position: 'relative',
                     height: '100%',
                     display: 'flex',
-                    flexDirection: 'column'
+                    flexDirection: 'column',
+                    border: `1px solid ${stitchTheme.colors.outlineVariant}`
                   }}
                   onMouseEnter={() => setHoveredMeal(meal.id)}
                   onMouseLeave={() => setHoveredMeal(null)}
                   >
                     {/* Image */}
-                    <div style={{ position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ position: 'relative', overflow: 'hidden', height: '200px' }}>
                       <img 
                         src={meal.image_url || 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=400'} 
                         alt={meal.name}
                         style={{
                           width: '100%',
-                          height: '200px',
+                          height: '100%',
                           objectFit: 'cover',
-                          transition: 'transform 0.3s ease',
-                          transform: hoveredMeal === meal.id ? 'scale(1.05)' : 'scale(1)'
+                          transition: 'transform 0.5s ease',
+                          transform: hoveredMeal === meal.id ? 'scale(1.08)' : 'scale(1)'
                         }}
                       />
-                      {hoveredMeal === meal.id && (
-                        <div style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          background: 'rgba(0,0,0,0.1)'
-                        }} />
-                      )}
+                      {/* Category Tag Overlay */}
+                      <div style={{
+                        position: 'absolute',
+                        bottom: '12px',
+                        left: '12px',
+                        background: stitchTheme.colors.surface,
+                        backdropFilter: 'blur(8px)',
+                        padding: '4px 12px',
+                        borderRadius: '9999px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        color: stitchTheme.colors.primary,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        <span>{getCategoryIcon(meal.category)}</span>
+                        <span>{meal.category}</span>
+                      </div>
                     </div>
 
                     {/* Admin Controls */}
                     {userRole === 'admin' && (
                       <div style={{
                         position: 'absolute',
-                        top: theme.spacing.md,
-                        right: theme.spacing.md,
+                        top: '12px',
+                        right: '12px',
                         display: 'flex',
-                        gap: theme.spacing.xs,
+                        gap: '8px',
                         zIndex: 1
                       }}>
                         <button 
@@ -541,31 +455,28 @@ export default function Home() {
                             setIsEditModalOpen(true)
                           }}
                           style={{
-                            background: 'white',
-                            color: theme.colors.primary,
+                            background: stitchTheme.colors.surface,
+                            color: stitchTheme.colors.primary,
                             border: 'none',
-                            padding: theme.spacing.sm,
-                            borderRadius: theme.borderRadius.sm,
+                            padding: '8px',
+                            borderRadius: '8px',
                             cursor: 'pointer',
-                            fontSize: theme.typography.fontSizes.sm,
-                            fontWeight: theme.typography.fontWeights.medium,
-                            boxShadow: theme.shadows.md,
-                            transition: 'all 0.2s',
-                            width: '36px',
-                            height: '36px',
+                            fontSize: '14px',
+                            fontWeight: 500,
+                            boxShadow: stitchTheme.shadows.sm,
+                            width: '32px',
+                            height: '32px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center'
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.background = theme.colors.primary
+                            e.currentTarget.style.background = stitchTheme.colors.primary
                             e.currentTarget.style.color = 'white'
-                            e.currentTarget.style.transform = 'scale(1.1)'
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'white'
-                            e.currentTarget.style.color = theme.colors.primary
-                            e.currentTarget.style.transform = 'scale(1)'
+                            e.currentTarget.style.background = stitchTheme.colors.surface
+                            e.currentTarget.style.color = stitchTheme.colors.primary
                           }}
                         >
                           ✏️
@@ -573,30 +484,27 @@ export default function Home() {
                         <button 
                           onClick={() => handleDeleteMeal(meal.id)}
                           style={{
-                            background: 'white',
-                            color: theme.colors.danger,
+                            background: stitchTheme.colors.surface,
+                            color: stitchTheme.colors.error,
                             border: 'none',
-                            padding: theme.spacing.sm,
-                            borderRadius: theme.borderRadius.sm,
+                            padding: '8px',
+                            borderRadius: '8px',
                             cursor: 'pointer',
-                            fontSize: theme.typography.fontSizes.sm,
-                            boxShadow: theme.shadows.md,
-                            transition: 'all 0.2s',
-                            width: '36px',
-                            height: '36px',
+                            fontSize: '14px',
+                            boxShadow: stitchTheme.shadows.sm,
+                            width: '32px',
+                            height: '32px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center'
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.background = theme.colors.danger
+                            e.currentTarget.style.background = stitchTheme.colors.error
                             e.currentTarget.style.color = 'white'
-                            e.currentTarget.style.transform = 'scale(1.1)'
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'white'
-                            e.currentTarget.style.color = theme.colors.danger
-                            e.currentTarget.style.transform = 'scale(1)'
+                            e.currentTarget.style.background = stitchTheme.colors.surface
+                            e.currentTarget.style.color = stitchTheme.colors.error
                           }}
                         >
                           🗑️
@@ -605,42 +513,30 @@ export default function Home() {
                     )}
 
                     {/* Content */}
-                    <div style={{ padding: theme.spacing.lg, flex: 1 }}>
+                    <div style={{ padding: '20px', flex: 1 }}>
                       <h3 style={{
-                        margin: `0 0 ${theme.spacing.xs} 0`,
-                        fontSize: theme.typography.fontSizes.lg,
-                        color: theme.colors.text.primary,
-                        fontWeight: theme.typography.fontWeights.semibold
+                        margin: `0 0 8px 0`,
+                        fontSize: '18px',
+                        color: stitchTheme.colors.onSurface,
+                        fontWeight: 700,
+                        lineHeight: 1.3
                       }}>
                         {meal.name}
                       </h3>
                       
                       <div style={{
                         display: 'flex',
-                        gap: theme.spacing.xs,
-                        marginBottom: theme.spacing.md,
+                        gap: '8px',
+                        marginBottom: '16px',
                         flexWrap: 'wrap'
                       }}>
                         <span style={{
-                          background: 'rgba(102, 126, 234, 0.1)',
-                          color: theme.colors.primary,
-                          padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
-                          borderRadius: theme.borderRadius.full,
-                          fontSize: theme.typography.fontSizes.xs,
-                          fontWeight: theme.typography.fontWeights.medium,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px'
-                        }}>
-                          {meal.category === 'breakfast' ? '🍳' : meal.category === 'lunch' ? '🥘' : '🍲'} {meal.category}
-                        </span>
-                        <span style={{
-                          background: 'rgba(72, 187, 120, 0.1)',
-                          color: theme.colors.secondaryDark,
-                          padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
-                          borderRadius: theme.borderRadius.full,
-                          fontSize: theme.typography.fontSizes.xs,
-                          fontWeight: theme.typography.fontWeights.medium,
+                          background: `${stitchTheme.colors.secondary}10`,
+                          color: stitchTheme.colors.secondary,
+                          padding: '4px 12px',
+                          borderRadius: '9999px',
+                          fontSize: '11px',
+                          fontWeight: 500,
                           display: 'flex',
                           alignItems: 'center',
                           gap: '4px'
@@ -649,12 +545,12 @@ export default function Home() {
                         </span>
                         {meal.prep_time && (
                           <span style={{
-                            background: 'rgba(237, 137, 54, 0.1)',
-                            color: '#dd6b20',
-                            padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
-                            borderRadius: theme.borderRadius.full,
-                            fontSize: theme.typography.fontSizes.xs,
-                            fontWeight: theme.typography.fontWeights.medium,
+                            background: `${stitchTheme.colors.tertiary}10`,
+                            color: stitchTheme.colors.tertiary,
+                            padding: '4px 12px',
+                            borderRadius: '9999px',
+                            fontSize: '11px',
+                            fontWeight: 500,
                             display: 'flex',
                             alignItems: 'center',
                             gap: '4px'
@@ -665,10 +561,10 @@ export default function Home() {
                       </div>
 
                       <p style={{
-                        color: theme.colors.text.secondary,
-                        fontSize: theme.typography.fontSizes.sm,
-                        margin: `0 0 ${theme.spacing.md} 0`,
-                        lineHeight: 1.6
+                        color: stitchTheme.colors.onSurfaceVariant,
+                        fontSize: '13px',
+                        margin: `0 0 16px 0`,
+                        lineHeight: 1.5
                       }}>
                         <strong>Portion:</strong> {meal.portion}
                       </p>
@@ -678,30 +574,31 @@ export default function Home() {
                       }}>
                         <summary style={{
                           cursor: 'pointer',
-                          color: theme.colors.primary,
-                          fontSize: theme.typography.fontSizes.sm,
-                          fontWeight: theme.typography.fontWeights.medium,
-                          padding: theme.spacing.sm,
-                          borderRadius: theme.borderRadius.sm,
-                          background: 'rgba(102, 126, 234, 0.05)',
+                          color: stitchTheme.colors.primary,
+                          fontSize: '13px',
+                          fontWeight: 500,
+                          padding: '8px',
+                          borderRadius: '8px',
+                          background: `${stitchTheme.colors.primary}05`,
                           listStyle: 'none'
                         }}>
                           📋 View Ingredients
                         </summary>
                         <ul style={{
-                          marginTop: theme.spacing.md,
-                          paddingLeft: theme.spacing.lg,
-                          color: theme.colors.text.secondary
+                          marginTop: '12px',
+                          paddingLeft: '20px',
+                          color: stitchTheme.colors.onSurfaceVariant
                         }}>
                           {meal.ingredients?.map((item, index) => (
                             <li key={index} style={{
-                              padding: theme.spacing.xs,
-                              borderBottom: index < meal.ingredients.length - 1 ? `1px solid ${theme.colors.border}` : 'none',
+                              padding: '6px 0',
+                              borderBottom: index < meal.ingredients.length - 1 ? `1px solid ${stitchTheme.colors.outlineVariant}` : 'none',
                               display: 'flex',
-                              justifyContent: 'space-between'
+                              justifyContent: 'space-between',
+                              fontSize: '12px'
                             }}>
                               <span>{item.name}</span>
-                              <span style={{ color: theme.colors.primary, fontWeight: theme.typography.fontWeights.medium }}>
+                              <span style={{ color: stitchTheme.colors.primary, fontWeight: 500 }}>
                                 {item.quantity}
                               </span>
                             </li>
@@ -714,7 +611,68 @@ export default function Home() {
               ))}
             </div>
           )}
-        </div>
+        </main>
+
+        {/* Bottom Navigation */}
+        <nav style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          background: `${stitchTheme.colors.surface}/0.8`,
+          backdropFilter: 'blur(12px)',
+          borderTop: `1px solid ${stitchTheme.colors.outlineVariant}`,
+          padding: '12px 24px',
+          borderRadius: '24px 24px 0 0'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-around',
+            alignItems: 'center',
+            maxWidth: '400px',
+            margin: '0 auto'
+          }}>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '4px',
+              background: `${stitchTheme.colors.primary}10`,
+              color: stitchTheme.colors.primary,
+              padding: '8px 16px',
+              borderRadius: '16px'
+            }}>
+              <span>🍽️</span>
+              <span style={{ fontSize: '11px', fontWeight: 600 }}>Library</span>
+            </div>
+            <Link href="/weekly" style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '4px',
+              textDecoration: 'none',
+              color: stitchTheme.colors.onSurfaceVariant,
+              padding: '8px 16px',
+              borderRadius: '12px'
+            }}>
+              <span>📅</span>
+              <span style={{ fontSize: '11px' }}>Planner</span>
+            </Link>
+            <Link href="/shopping" style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '4px',
+              textDecoration: 'none',
+              color: stitchTheme.colors.onSurfaceVariant,
+              padding: '8px 16px',
+              borderRadius: '12px'
+            }}>
+              <span>🛒</span>
+              <span style={{ fontSize: '11px' }}>List</span>
+            </Link>
+          </div>
+        </nav>
 
         {/* Modals */}
         <AddMealModal 
