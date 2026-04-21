@@ -25,6 +25,8 @@ export const viewport = {
   userScalable: "yes",
 };
 
+import { Toaster } from 'sonner';
+
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
@@ -37,6 +39,7 @@ export default function RootLayout({ children }) {
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         {children}
+        <Toaster richColors position="top-center" />
       </body>
     </html>
   );
