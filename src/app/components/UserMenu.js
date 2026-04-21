@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { stitchTheme } from '../styles/stitchTheme'
 
@@ -9,6 +9,7 @@ export default function UserMenu({ user, userRole }) {
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef(null)
   const router = useRouter()
+  const supabase = createClient()
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -22,6 +23,7 @@ export default function UserMenu({ user, userRole }) {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
+    router.refresh() // Using refresh so Server Components invalidate their cookies
     router.push('/auth/login')
   }
 
