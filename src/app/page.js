@@ -31,10 +31,10 @@ export default async function Home() {
   return (
     <>
       <style>{globalStyles}</style>
-      <HomeClient 
-        initialMeals={meals || []} 
-        user={session.user} 
-        userRole={userRole} 
+      <HomeClient
+        initialMeals={meals || []}
+        user={session.user}
+        userRole={userRole}
       />
     </>
   )

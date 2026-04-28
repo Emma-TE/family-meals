@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { stitchTheme, globalStyles } from '../styles/stitchTheme'
@@ -9,6 +9,7 @@ import UserMenu from '../components/UserMenu'
 
 export default function WeeklyPage() {
   const router = useRouter()
+  const supabase = createClient()
   const [user, setUser] = useState(null)
   const [userRole, setUserRole] = useState(null)
   const [loading, setLoading] = useState(true)
