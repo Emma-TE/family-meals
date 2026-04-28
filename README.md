@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🍽️ Family Meal Planner
 
-## Getting Started
+A private, real‑time meal planning app for families. Plan weekly meals, manage your recipe collection, and generate a consolidated shopping list – all in one place.
 
-First, run the development server:
+## ✨ Features
 
-```bash
+- 🔐 **Private & secure** – Only approved users can sign in (admin creates accounts).
+- 👥 **Family sync** – Invite one family member to share the same meal plan and shopping list in real time.
+- 📚 **Full meal management** – Add, edit, delete meals with image, portions, calories, prep time.
+- 🗓️ **Auto‑weekly planner** – Randomly generates breakfast, lunch & dinner for the week (admin only).
+- 🛒 **Smart shopping list** – Automatically combines ingredients from the week’s meals. Check off items as you shop.
+- 📱 **Mobile friendly & installable** – Works like a native app on your phone (PWA).
+- 🎨 **Beautiful design** – Warm, culinary‑inspired theme with responsive layout.
+
+## 🛠️ Tech Stack
+
+- **Frontend**: Next.js (React), Tailwind CSS, custom Stitch design system
+- **Backend & Database**: Supabase (PostgreSQL, Auth, Realtime, Storage)
+- **Hosting**: Vercel
+- **PWA**: Next.js PWA plugin – installable on Android/iOS
+
+## 🚀 Getting Started (for local development)
+
+### Prerequisites
+- Node.js (v18+)
+- Git
+- Supabase account (free tier)
+
+### Installation
+
+1. Clone the repo  
+   ```bash
+   git clone https://github.com/Emma-TE/family-meals.git
+   cd family-meals
+Install dependencies
+
+bash
+npm install
+Set up environment variables
+Create a .env.local file in the root:
+
+env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_publishable_key
+Run the development server
+
+bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Open http://localhost:3000
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+📦 Deployment
+The project is configured for Vercel. Push to GitHub → Vercel auto‑deploys.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+Environment variables must be set in Vercel Dashboard under Settings → Environment Variables (mark the ANON_KEY as Sensitive).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+📄 License
+Private project – for personal family use.
