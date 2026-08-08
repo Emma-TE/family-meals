@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '../../lib/supabase/client'
-import { stitchTheme, globalStyles } from '../styles/stitchTheme'
+import { stitchTheme } from '../styles/stitchTheme'
 import { toast } from 'sonner' 
 
 // Components
@@ -10,7 +10,7 @@ import AddMealModal from './AddMealModal'
 import EditMealModal from './EditMealModal'
 import MealCard from './MealCard'
 import CategoryFilter from './CategoryFilter'
-import { Header, BottomNav } from './Navigation'
+import PageShell from './PageShell'
 
 // Styles
 import styles from '../page.module.css'
@@ -66,15 +66,7 @@ export default function HomeClient({ initialMeals, user, userRole }) {
   ]
 
   return (
-    <>
-      <style>{globalStyles}</style>
-      <div 
-        className={styles.pageWrapper}
-        style={{ background: stitchTheme.colors.background }}
-      >
-        <Header user={user} userRole={userRole} />
-
-        <main className={styles.mainContent}>
+    <PageShell title="🍽️ Meal Library" active="library" user={user} userRole={userRole}>
           {/* Header with Add Button */}
           <div className={styles.headerRow}>
             <div>
@@ -151,7 +143,7 @@ export default function HomeClient({ initialMeals, user, userRole }) {
                 No meals yet
               </h3>
               <p style={{ color: stitchTheme.colors.onSurfaceVariant, marginBottom: '24px' }}>
-                Click "Add New Meal" to get started with your meal library!
+                Click &quot;Add New Meal&quot; to get started with your meal library!
               </p>
               {userRole === 'admin' && (
                 <button
@@ -184,9 +176,6 @@ export default function HomeClient({ initialMeals, user, userRole }) {
               ))}
             </div>
           )}
-        </main>
-
-        <BottomNav />
 
         {/* Modals */}
         <AddMealModal 
@@ -195,7 +184,8 @@ export default function HomeClient({ initialMeals, user, userRole }) {
           onMealAdded={handleMealAdded}
         />
 
-        <EditMealModal 
+        <EditMealModal
+          key={selectedMeal?.id || 'none'}
           isOpen={isEditModalOpen}
           onClose={() => {
             setIsEditModalOpen(false)
@@ -204,7 +194,6 @@ export default function HomeClient({ initialMeals, user, userRole }) {
           meal={selectedMeal}
           onMealUpdated={handleMealUpdated}
         />
-      </div>
-    </>
+    </PageShell>
   )
 }

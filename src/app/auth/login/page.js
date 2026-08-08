@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
 import { useRouter } from 'next/navigation'
-import { stitchTheme, globalStyles } from '../../styles/stitchTheme'
+import { stitchTheme } from '../../styles/stitchTheme'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -54,7 +54,6 @@ export default function LoginPage() {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-10px); }
           }
-          ${globalStyles}
         `}</style>
       </div>
     )
@@ -62,7 +61,6 @@ export default function LoginPage() {
 
   return (
     <>
-      <style>{globalStyles}</style>
       <div style={{
         minHeight: '100vh',
         display: 'flex',

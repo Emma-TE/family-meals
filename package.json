@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "icons": "node scripts/generate-icons.js"
   },
   "dependencies": {
     "@supabase/auth-ui-react": "^0.4.7",

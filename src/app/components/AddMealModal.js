@@ -16,15 +16,6 @@ const validateCalories = (value) => {
   return !isNaN(num) && num >= 0 && num <= 5000
 }
 const validatePortion = (value) => /^[a-zA-Z0-9\s\-\+\/\(\)\.,%½⅓¼⅔¾]+$/.test(value)
-const validateImageUrl = (url) => {
-  if (!url) return true
-  try {
-    const parsed = new URL(url)
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
-  } catch { return false }
-}
-const validateIngredientName = (name) => /^[a-zA-Z0-9\s\-\'\.]+$/.test(name)
-const validateIngredientQuantity = (quantity) => /^[a-zA-Z0-9\s\-\/\(\)\.,½⅓¼⅔¾ cups?|tbsp?|tsp?|g|kg|ml|L]+$/.test(quantity)
 
 export default function AddMealModal({ isOpen, onClose, onMealAdded }) {
   const [name, setName] = useState('')

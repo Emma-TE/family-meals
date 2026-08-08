@@ -1,4 +1,4 @@
-/* Minimal global styles */
+/* Global reset */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -9,4 +9,48 @@ body {
   font-family: system-ui, -apple-system, 'Work Sans', sans-serif;
   background-color: #fef8f3;
   min-height: 100vh;
+}
+
+/* Shared animations (used via inline `animation:` styles across components) */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.4s ease-out;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #e8e1da;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #a33f00;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #903700;
 }

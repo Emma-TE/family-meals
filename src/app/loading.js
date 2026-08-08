@@ -84,13 +84,6 @@ export default function Loading() {
           ))}
         </div>
       </main>
-
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.4; }
-        }
-      `}</style>
     </div>
   )
 }

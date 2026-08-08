@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { createClient } from '../../lib/supabase/client'
 import { stitchTheme } from '../styles/stitchTheme'
 import { toast } from 'sonner'
@@ -16,39 +16,22 @@ const validateCalories = (value) => {
   return !isNaN(num) && num >= 0 && num <= 5000
 }
 const validatePortion = (value) => /^[a-zA-Z0-9\s\-\+\/\(\)\.,%½⅓¼⅔¾]+$/.test(value)
-const validateImageUrl = (url) => {
-  if (!url) return true
-  try {
-    const parsed = new URL(url)
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
-  } catch { return false }
-}
-const validateIngredientName = (name) => /^[a-zA-Z0-9\s\-\'\.]+$/.test(name)
-const validateIngredientQuantity = (quantity) => /^[a-zA-Z0-9\s\-\/\(\)\.,½⅓¼⅔¾ cups?|tbsp?|tsp?|g|kg|ml|L]+$/.test(quantity)
 
 export default function EditMealModal({ isOpen, onClose, meal, onMealUpdated }) {
-  const [name, setName] = useState('')
-  const [category, setCategory] = useState('breakfast')
-  const [calories, setCalories] = useState('')
-  const [portion, setPortion] = useState('')
-  const [prepTime, setPrepTime] = useState('')
-  const [imageUrl, setImageUrl] = useState('')
+  // State is seeded from `meal`; HomeClient remounts this modal with
+  // key={selectedMeal.id} whenever a different meal is opened.
+  const [name, setName] = useState(meal?.name || '')
+  const [category, setCategory] = useState(meal?.category || 'breakfast')
+  const [calories, setCalories] = useState(meal?.calories?.toString() || '')
+  const [portion, setPortion] = useState(meal?.portion || '')
+  const [prepTime, setPrepTime] = useState(meal?.prep_time || '')
+  const [imageUrl, setImageUrl] = useState(meal?.image_url || '')
   const [imageFile, setImageFile] = useState(null)
-  const [ingredients, setIngredients] = useState([{ name: '', quantity: '' }])
+  const [ingredients, setIngredients] = useState(
+    meal?.ingredients?.length ? meal.ingredients : [{ name: '', quantity: '' }]
+  )
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-
-  useEffect(() => {
-    if (meal) {
-      setName(meal.name || '')
-      setCategory(meal.category || 'breakfast')
-      setCalories(meal.calories?.toString() || '')
-      setPortion(meal.portion || '')
-      setPrepTime(meal.prep_time || '')
-      setImageUrl(meal.image_url || '')
-      setIngredients(meal.ingredients?.length ? meal.ingredients : [{ name: '', quantity: '' }])
-    }
-  }, [meal])
 
   if (!isOpen) return null
 

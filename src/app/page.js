@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '../lib/supabase/server'
+import { getUserRole, fetchMeals } from '../lib/data'
 import HomeClient from './components/HomeClient'
-import { globalStyles } from './styles/stitchTheme'
 
 export default async function Home() {
   const supabase = await createClient()
@@ -13,29 +13,17 @@ export default async function Home() {
     redirect('/auth/login')
   }
 
-  // 2. Fetch User Role securely
-  const { data: roleData } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', session.user.id)
-    .single()
-
-  const userRole = roleData?.role || 'viewer'
-
-  // 3. Fetch Meals natively on server
-  const { data: meals } = await supabase
-    .from('meals')
-    .select('*')
-    .order('category')
+  // 2. Fetch role and meals natively on server
+  const [userRole, meals] = await Promise.all([
+    getUserRole(supabase, session.user.id),
+    fetchMeals(supabase),
+  ])
 
   return (
-    <>
-      <style>{globalStyles}</style>
-      <HomeClient
-        initialMeals={meals || []}
-        user={session.user}
-        userRole={userRole}
-      />
-    </>
+    <HomeClient
+      initialMeals={meals}
+      user={session.user}
+      userRole={userRole}
+    />
   )
 }
